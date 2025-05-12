@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block load %}
+{% load custom_filters %}
+{% endblock load %}
+
+{% block title %}
+<title>Cui Liang Shi | 會員中心</title>
+{% endblock title %}
+
+{% block style %}
+.nav-link {
+    color: inherit; /* 繼承父元素的顏色，這樣就不會顯示為藍色 */
+    text-decoration: none; /* 移除下劃線 */
+}
+
+/* 與其它分頁設定不同 */
+.table td {
+    padding: 1rem 0.5rem 1rem 0.5rem;
+  }
+
+.table th {
+padding: 0 0.5rem 1rem 0.5rem;
+text-wrap: nowrap;
+
+}
+/* 控制整體對齊效果 */
+.table td, .table th {
+vertical-align: middle;
+}
+
+#tr1 {
+    padding: 0;
+    text-color: #e1e1e1;
+}
+{% endblock style %}
+
+{% block header %}
+{% endblock header %}
+
+{% block content %}
+<div class="wrapper container mt-5">
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link disabled" href="/users/{{user_id}}">個人資料</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link disabled" href="/coupons/">優惠券</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="#">訂單詳情</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link disabled" href="/favorites/">追蹤清單</a>
+        </li>
+    </ul>
+    <div class="row justify-content-center" style="min-height: 32rem;">
+        <div class="box col-xxl-8 col-xl-9 col-lg-10 px-4 py-3">    
+            <div class="row">
+                <div style="display: flex; align-items: center;" class="ms-2 my-3">
+                    <div class="bar"></div>
+                    <h4 class="pt-1">訂單詳情</h4>
+                    <div class="ms-auto me-2">
+                        <a href="/orders/" class="btn btn-light btn-outline-secondary text-nowrap">關閉</a>
+                    </div>
+                </div>
+                <hr style="border-top: 1px solid #999; width: 98%;" class="mx-auto">
+                <div class="row">
+                    <div class="col-12 col-lg-9 mb-2">
+                        <div class="accordion" id="accordionOrderDetails">
+                            <div class="accordion-item">
+                                <h5 class="accordion-header" id="headingOne">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">訂單資訊</button>
+                                </h5>
+                                <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne">
+                                    <div class="accordion-body mt-2">
+                                        <p><strong>訂單號碼：</strong> {{ order.order_number }}</p>
+                                        <p><strong>訂單日期：</strong> {{ order.created_at|date:"Y-m-d H:i" }}</p>
+                                        <p><strong>付款方式：</strong> {{ order.payment_method }}</p>
+                                        <p><strong>訂單狀態：</strong> {{ order.order_status }}</p>
+                                        <p><strong>訂單完成時間：</strong> {{ order.status_updated_at|date:"Y-m-d H:i" }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h5 class="accordion-header" id="headingTwo">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">寄送資訊</button>
+                                </h5>
+                                <div id="collapseTwo" class="accordion-collapse collapse show" aria-labelledby="headingTwo">
+                                    <div class="accordion-body mt-2">
+                                        <p><strong>收件人姓名：</strong> {{ order.recipient_name }}</p>
+                                        <p><strong>收件人電話：</strong> {{ order.recipient_phone }}</p>
+                                        <p><strong>收件人電子郵件：</strong> {{ order.recipient_email }}</p>
+                                        <p><strong>寄送方式：</strong> {{ order.shipping_method }}</p>
+                                        <p><strong>收件地址：</strong> {{ order.shipping_address }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h5 class="accordion-header" id="headingThree">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="true" aria-controls="collapseThree">購物車資訊</button>
+                                </h5>
+                                <div id="collapseThree" class="accordion-collapse collapse show" aria-labelledby="headingThree">
+                                    <div class="accordion-body mt-2">
+                                        <table class="table  align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th colspan="2">商品</th>
+                                                    <th>商品數量</th>
+                                                    <th class="subtotal">小計</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for item in order_items %}
+                                                <tr>
+                                                    <td>
+                                                        {% with product_images|get_item:item as product_image %}
+                                                            {% if product_image %}
+                                                                <img src="/static/product_images/{{ product_image.image_name }}" alt="{{ item.variant.product.name }}" style="width: 8rem;">
+                                                            {% else %}
+                                                                <img src="/static/product_images/default.jpg" alt="預設圖片" style="width: 10rem;">
+                                                            {% endif %}
+                                                        {% endwith %}
+                                                    </td>
+                                                    <td>
+                                                        <p>{{ item.variant.product.name }} {{ item.variant.size.size_value }} ({{ item.variant.package.package_name }})</p>
+                                                        <p>${{ item.price }}</p>
+                                                    </td>
+                                                    <td>
+                                                        <p class="ms-4">{{ item.quantity }}</p>
+                                                    </td>
+                                                    <td>
+                                                        <p>${{ item.subtotal }}</p>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                        <div class="ms-2">
+                                            <p>商品總金額: ${{ order.total_price }}</p>
+                                            <p>運費:
+                                                {% if order.shipping_fee != 0 %}
+                                                    ${{ order.shipping_fee }}
+                                                {% else %}
+                                                    免運
+                                                {% endif %}            
+                                            </p>
+                                            <p>折扣: ${{ order.discount_amount }}</p>
+                                            <h5 class="fw-bold">結帳金額: ${{ order.final_price }}</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+{% block body_script %}
+
+{% endblock body_script %}

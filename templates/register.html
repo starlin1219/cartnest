@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}
+<title>Cui Liang Shi | 註冊會員</title>
+{% endblock title %}
+
+{% block style %}
+input::-ms-reveal,
+input::-ms-clear {
+        display: none;
+      }
+#rgstrfr {
+    background-color: rgb(245, 230, 190);
+}
+{% endblock style %}
+
+{% block head_script %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% endblock head_script %}
+
+{% block header %}
+{% endblock header %}
+
+{% block content %}
+<div class="wrapper container-sm mt-5">
+    <div class="row justify-content-center mt-4" style="min-height: 32rem;">
+        <div class="box col-xxl-6 col-xl-7 col-lg-8 px-4 py-3">    
+            <div class="row">
+                <div style="display: flex; align-items: center;" class="ms-2 my-3">
+                <div class="bar"></div>
+                <h4 class="pt-1">註冊會員</h4>
+                </div>
+                <hr style="border-top: 1px solid #999; width: 98%;" class="mx-auto">
+                <div class="row justify-content-center">
+                    <div class="col-10 col-md-8 ms-4">
+                        <form action="/register/" method="post" class="container">
+                            {% csrf_token %}
+                            <div class="row d-flex me-4 my-3">
+                                <label class="form-label ms-1" for="username">帳號</label>
+                                <input class="form-control ms-3" type="text" id="username" name="username" value="{{ username }}" placeholder="請輸入使用者名稱" required>
+                            </div>
+                            {% comment %} 顯示檢查結果 {% endcomment %}
+                            <div id="username-feedback" class="ms-2"></div> 
+                            <div class="row d-flex me-4 my-3">
+                                <label class="form-label ms-1" for="password">密碼</label>
+                                <input class="form-control ms-3" type="password" id="password" name="password" placeholder="請輸入 6-12 個字元" required>
+                            </div>
+                            <div class="row d-flex me-4 my-3">
+                                <label class="form-label ms-1" for="repassword">確認密碼</label>
+                                <input class="form-control ms-3" type="password" id="repassword" name="repassword" placeholder="請重複輸入密碼" required>
+                            </div>
+                            {% comment %} 顯示密碼一致性 {% endcomment %}
+                            <div id="password-feedback" class="ms-2"></div>
+                            <div class="row d-flex me-4 my-3">
+                                <label class="form-label ms-1" for="email">信箱</label>
+                                <input class="form-control ms-3" type="email" id="email" name="email" placeholder="請輸入您的郵件地址" required>
+                            </div>
+                            <div class="text-danger ms-2">{{message}}</div>
+                            <div class="row justify-content-center ms-1 me-2 mt-3 mb-3">
+                                <button type="submit" class="btn btn-primary my-1" id="registerBtn">註冊</button>
+                            </div>
+                            <p class="text-center text-muted mb-3">已經有帳號了?
+                                <a href="/login/" class="fw-bold text-decoration-none">登入</a>
+                            </p>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+{% block body_script %}
+<script>
+    $(document).ready(function() {
+        
+        $("#password").on("keyup", function(e) {
+            e.preventDefault();
+            checkUsername();
+        });
+    
+        $("#repassword").on("keyup", function() {
+            let password = $("#password").val();
+            let repassword = $(this).val();
+    
+            if ((password !== repassword)) {
+                $("#password-feedback").text("密碼不一致 ❌").css("color", "#dc3545");
+            } else if ((password.length == 0)) {
+                $("#password-feedback").text("請輸入密碼").css("color", "#dc3545");
+            } else {
+                $("#password-feedback").text("密碼一致 ✅").css("color", "green");
+            }
+        });
+    
+        function checkUsername() {
+            let username = $("#username").val().trim();
+            if (username.length == 0) {
+                $("#username-feedback").text("請輸入帳號").css("color", "#dc3545");
+                return;
+            } else if (username.length < 5) {
+                $("#username-feedback").text("帳號至少 5 個字元").css("color", "#dc3545");
+                return;
+            }
+    
+            $.ajax({
+                url: "/check_username/",  // 對應 Django 後端的檢查 API
+                type: "GET",
+                data: { username: username },
+                success: function(response) {
+                    if (response.available) {
+                        $("#username-feedback").text("此帳號可以使用 ✅").css("color", "green");
+                    } else {
+                        $("#username-feedback").text("此帳號已被註冊 ❌").css("color", "#dc3545");
+                    }
+                }
+            });
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.querySelector('form');
+        const registerBtn = document.getElementById('registerBtn');
+
+        form.addEventListener('submit', function () {
+            registerBtn.disabled = true;
+            registerBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 註冊中...';
+        });
+    });
+</script>
+{% endblock body_script %}

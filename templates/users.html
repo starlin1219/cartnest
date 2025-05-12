@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}
+<title>Cui Liang Shi | 會員中心</title>
+{% endblock title %}
+
+{% block style %}
+.nav-link {
+    color: inherit; /* 繼承父元素的顏色，這樣就不會顯示為藍色 */
+    text-decoration: none; /* 移除下劃線 */
+}
+{% endblock style %}
+
+{% block header %}
+{% endblock header %}
+
+{% block content %}
+<div class="wrapper container mt-5">
+  <ul class="nav nav-tabs">
+    <li class="nav-item">
+      <a class="nav-link active" href="/users/{{user.user_id}}/">個人資料</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/coupons/">優惠券</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/orders/">訂單查詢</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/favorites/">追蹤清單</a>
+    </li>
+  </ul>
+  <div class="row justify-content-center" style="min-height: 32rem;">
+    <div class="box col-xxl-8 col-xl-9 col-lg-10 px-4 py-3">    
+      <div class="row">
+        <div style="display: flex; align-items: center;" class="ms-2 my-3">
+          <div class="bar"></div>
+          <h4 class="pt-1">基本資料維護</h4>
+          <div class="ms-auto me-2">
+            <a href="/users/edit/" class="btn btn-outline-danger text-nowrap">修改密碼</a>
+          </div>
+        </div>
+        <hr style="border-top: 1px solid #999; width: 98%;" class="mx-auto">
+        <div class="row">
+          <div class="col-8">
+            <form action="/users/{{user.user_id}}/" method="POST" class="ms-3 my-2 text-nowrap">
+              {% csrf_token %}
+              
+              <!-- 姓名 -->
+              <div class="row mb-4">
+                  <label for="name" class="col-sm-3 col-form-label">姓名</label>
+                  <div class="col-sm-9">
+                    <input type="text" id="name" name="name" class="form-control" value="{{ user.name }}" required>
+                  </div>
+              </div>
+          
+              <!-- 性別 -->
+              <div class="row form-outline mb-4">
+                  <div class="col-sm-3 mb-2">性別</div>
+                  <div class="col-sm-9">
+                  {% for value, label in gender_choices %}
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="gender" value="{{ value }}" required
+                        {% if user.gender == value %}checked{% endif %}>
+                        <label class="form-check-label">{{ label }}</label>
+                    </div>
+                  {% endfor %}
+                  </div>
+              </div>
+          
+              <!-- 生日 -->
+              <div class="row mb-4">
+                <label for="birthday" class="col-sm-3 col-form-label">生日</label>
+                <div class="col-sm-9">
+                  <input type="date" id="birthday" name="birthday" class="form-control" value="{{ user.birthday|date:'Y-m-d'|default_if_none:'' }}" required>
+                </div>
+              </div>
+          
+              <!-- 電話 -->
+              <div class="row mb-4">
+                <label for="phone" class="col-sm-3 col-form-label">電話</label>
+                <div class="col-sm-9">
+                  <input type="tel" id="phone" name="phone" class="form-control" value="{{ user.phone|default_if_none:'' }}" pattern="[0-9]{10}" required>
+                </div>
+              </div>
+              
+              <!-- Email（不可修改） -->
+              <div class="row mb-4">
+                <label for="email" class="col-sm-3 col-form-label">電子郵件</label>
+                <div class="col-sm-9">
+                  <input type="email" id="email" name="email" class="form-control-plaintext" value="{{ auth_user.email }}" disabled readonly>
+                </div>
+              </div>
+
+              <!-- 地址 -->
+              <div class="row mb-4">
+                <label for="address" class="col-sm-3 col-form-label">地址</label>
+                <div class="col-sm-9">
+                  <input type="text" id="address" name="address" class="form-control" value="{{ user.address|default_if_none:'' }}" required>
+                </div>
+              </div>
+
+              <!-- Level（不可修改） -->
+              <div class="row mb-4">
+                <label for="level" class="col-sm-3 col-form-label">會員等級</label>
+                <div class="col-sm-auto">
+                  <input type="text" id="level" name="level" class="rounded-pill p-1 text-center bg-light" value="{{ auth_user.user.level }}" disabled readonly>
+                </div>
+              </div>
+          
+              <!-- 儲存按鈕 -->
+              <div class="d-grid gap-2 col-12">
+                  <button type="submit" class="btn btn-warning my-2">儲存</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- 歡迎提示 Modal -->
+<div class="modal fade" id="welcomeModal" tabindex="-1" aria-labelledby="welcomeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title d-flex align-items-center" id="welcomeModalLabel">
+                  <i class="bi bi-stars text-warning me-2 fs-4"></i>
+                  歡迎加入
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
+          </div>
+          <div class="modal-body">
+              請先填寫基本資料，以享受美好的購物體驗 ✨
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-bs-dismiss="modal">知道了</button>
+          </div>
+      </div>
+  </div>
+</div>
+<!-- 系統提示 Modal -->
+<div class="modal fade" id="systemMessageModal" tabindex="-1" aria-labelledby="systemMessageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+          <div class="modal-header {% if modal_type == 'error' %}bg-danger text-white{% else %}bg-success text-white{% endif %}">
+              <h5 class="modal-title d-flex align-items-center" id="systemMessageModalLabel">
+                  <i class="bi bi-info-circle me-2 fs-4"></i>
+                  系統提示
+              </h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="關閉"></button>
+          </div>
+          <div class="modal-body">
+              {{ modal_message }}
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn {% if modal_type == 'error' %}btn-light{% else %}btn-outline-success{% endif %}" data-bs-dismiss="modal">關閉</button>
+          </div>
+      </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block body_script %}
+{% if show_modal %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const modal = new bootstrap.Modal(document.getElementById('welcomeModal'));
+        modal.show();
+    });
+</script>
+{% endif %}
+{% if modal_message %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const modal = new bootstrap.Modal(document.getElementById('systemMessageModal'));
+        modal.show();
+    });
+</script>
+{% endif %}
+{% endblock body_script %}

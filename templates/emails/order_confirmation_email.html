@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; }
+        .container { max-width: 600px; margin: auto; padding: 20px; }
+        .header { background-color: #9FB9CC; color: white; padding: 10px 20px; }
+        .content { background-color: #f9f9f9; padding: 20px; }
+        .footer { font-size: 0.9rem; color: #555; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>🎉 訂單成立通知</h2>
+        </div>
+        <div class="content">
+            <p>親愛的 {{ name }}，您好：</p>
+            <p>感謝您於 CUI LIANG SHI 訂購商品！</p>
+            <p>您的訂單編號為：<strong>{{ order_number }}</strong></p>
+
+            <p>我們會盡快為您出貨，若有任何問題，歡迎與我們聯繫。</p>
+
+            <p>祝您購物愉快！</p>
+        </div>
+        <div class="footer">
+            CUI LIANG SHI 化妝品有限公司<br>
+            本信件為系統自動發送，請勿直接回覆。
+        </div>
+    </div>
+</body>
+</html>

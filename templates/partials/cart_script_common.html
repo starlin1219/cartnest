@@ -1,0 +1,129 @@
+<script>
+
+    function handleAddToCart(variantId, productId, categoryIds, name, size, packageName, price, image, number, redirect = false) {
+        $.ajax({
+            url: "{% url 'add_cart' %}",
+            type: "POST",
+            data: {
+                'variant': variantId,
+                'product_id': productId,
+                'category_ids': categoryIds,
+                'name': name,
+                'size': size,
+                'package': packageName,
+                'price': price,
+                'image_name': image,
+                'number': number
+            },
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    if (redirect) {
+                        window.location.href = "{% url 'cart' %}";
+                    } else {
+                        $('#toastMessage').text(response.message);
+                        let toast = new bootstrap.Toast(document.getElementById('successToast'), { delay: 1000 });
+                        toast.show();
+
+                        if (response.cart_count > 0) {
+                            $('#cart-count').text(response.cart_count).show();
+                        } else {
+                            $('#cart-count').hide();
+                        }
+                    }
+                } else {
+                    alert(response.message || "操作失敗");
+                }
+            },
+            error: function(xhr) {
+                if (xhr.status === 401) {
+                    $('#errorModalMessage').text("請先登入會員！");
+                    shouldRedirectToLogin = true;
+                    let modal = new bootstrap.Modal(document.getElementById('errorModal'));
+                    modal.show();
+                } else {
+                    let errMsg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : "加入購物車失敗，請再試一次！";
+                    $('#errorModalMessage').text(errMsg);
+                    shouldRedirectToLogin = false;
+                    let modal = new bootstrap.Modal(document.getElementById('errorModal'));
+                    modal.show();
+                }
+            }
+        });
+    }
+
+    function bindAddToCartEvents(withQuantity = false) {
+        $('.add-to-cart').off('click').on('click', function (e) {
+            e.preventDefault();
+            const button = $(this);
+
+            const variantId = button.data('variant-id');
+            const productId = button.data('product-id');
+            const categoryIds = button.data('category-ids');
+            const name = button.data('name');
+            const size = button.data('size');
+            const packageName = button.data('package');
+            const price = button.data('price');
+            const image = button.data('image');
+            const number = withQuantity ? parseInt($('#quantity').val()) || 1 : 1;
+            console.log('數量:', number);
+
+            handleAddToCart(variantId, productId, categoryIds, name, size, packageName, price, image, number, false);
+        });
+
+        $('.buy-now').off('click').on('click', function (e) {
+            e.preventDefault();
+            const button = $(this);
+
+            const variantId = button.data('variant-id');
+            const productId = button.data('product-id');
+            const categoryIds = button.data('category-ids');
+            const name = button.data('name');
+            const size = button.data('size');
+            const packageName = button.data('package');
+            const price = button.data('price');
+            const image = button.data('image');
+            const number = parseInt($('#quantity').val()) || 1;
+            console.log('數量:', number);
+
+            handleAddToCart(variantId, productId, categoryIds, name, size, packageName, price, image, number, true);
+        });
+    }
+	
+	function bindFavoriteEvents() {
+        $('.favorite-icon').off('click').on('click', function () {
+            const icon = $(this);
+            const variantId = icon.data('variant-id');
+    
+            $.ajax({
+                url: "{% url 'toggle_favorite' %}",
+                type: 'POST',
+                data: {
+                    'variant_id': variantId,
+                },
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function (response) {
+                    if (response.status === 'added') {
+                        icon.removeClass('bi-heart').addClass('bi-heart-fill');
+                    } else if (response.status === 'removed') {
+                        icon.removeClass('bi-heart-fill').addClass('bi-heart');
+                    }
+                },
+                error: function () {
+                    alert('操作失敗，請重新登入或稍後再試');
+                }
+            });
+        });
+    }        
+
+    $(document).ready(function () {
+        const useQuantity = {{ with_quantity|yesno:"true,false" }};
+        bindAddToCartEvents(useQuantity);
+		bindFavoriteEvents();
+    });
+	
+</script>

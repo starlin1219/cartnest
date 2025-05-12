@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}
+<title>Cui Liang Shi | 會員中心</title>
+{% endblock title %}
+
+{% block style %}
+.nav-link {
+    color: inherit; /* 繼承父元素的顏色，這樣就不會顯示為藍色 */
+    text-decoration: none; /* 移除下劃線 */
+}
+
+.table td {
+    padding: 2rem 1rem 2rem 1rem;
+}
+#td-date {
+    padding: 4rem 1rem 4rem 1rem;
+}
+.table th {
+    padding: 0 0 1rem 1rem;
+}
+/* 控制整體對齊效果 */
+.table td, .table th {
+    vertical-align: middle;
+}
+{% endblock style %}
+
+{% block header %}
+{% endblock header %}
+
+{% block content %}
+<div class="wrapper container mt-5">
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link" href="/users/{{user_id}}">個人資料</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/coupons/">優惠券</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/orders/">訂單查詢</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="/favorites/">追蹤清單</a>
+        </li>
+    </ul>
+
+    <div class="row justify-content-center" style="min-height: 32rem;">
+        <div class="box col-xxl-8 col-xl-9 col-lg-10 px-4 py-3">    
+            <div class="row">
+                <div style="display: flex; align-items: center;" class="ms-2 my-3">
+                    <div class="bar"></div>
+                    <h4 class="pt-1">商品追蹤清單</h4>
+                </div>
+                <hr style="border-top: 1px solid #999; width: 98%;" class="mx-auto">
+                <div class="col">
+                    {% if favorites %}
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th class="d-none d-md-block text-nowrap">追蹤日期</th>
+                                <th>商品圖片</th>
+                                <th>商品名稱</th>
+                                <th>價格</th>
+                                <th> </th>
+                                <th>&nbsp;</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for item in favorites %}
+                            <tr>
+                                <td class="d-none d-md-block" id="td-date">{{ item.added_at|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    <img src="/static/product_images/{{ item.image_name }}" alt="商品圖片" style="width: 5rem;">
+                                </td>
+                                <td>
+                                    {{ item.product_name }}
+                                </td>
+                                <td>
+                                    ${{ item.price }}
+                                </td>
+                                <td>
+                                    <button class="btn btn-outline-primary add-to-cart"
+                                        data-variant-id="{{ item.variant_id }}" 
+                                        data-product-id="{{ item.product_id }}"
+                                        data-category-ids="{{ item.category_ids|join:',' }}"
+                                        data-name="{{ item.product_name }}" 
+                                        data-size="{{ item.size }}" 
+                                        data-package="{{ item.package }}" 
+                                        data-price="{{ item.price }}" 
+                                        data-image="{{ item.image_name }}"
+                                        {% if item.stock_total == 0 %} disabled {% endif %}>
+                                        <i class="bi bi-cart d-md-none"></i>
+                                        <span class="d-none d-md-inline text-nowrap">
+                                        {% if item.stock_total == 0 %}缺貨中...{% else %}加入購物車{% endif %}
+                                         </span>
+                                    </button>                 
+                                </td>
+                                <td>
+                                    <button class="btn btn-outline-danger " onclick="confirmDelete('{{ item.variant_id }}')">
+                                        <i class="bi bi-trash3 d-md-none"></i>
+                                        <span class="d-none d-md-inline text-nowrap">刪除</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody> 
+                    </table>
+                    {% else %}
+                    <h6>目前沒有追蹤商品 <a href="/" class="btn btn-warning ms-2">來去逛逛 <i class="bi bi-heart"></i></a></h6>
+                    {% endif %}  
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 刪除確認 Modal -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title d-flex align-items-center" id="confirmDeleteLabel">
+                    <i class="bi bi-trash3-fill text-danger me-2 fs-4"></i>
+                    確認刪除
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
+            </div>
+            <div class="modal-body">
+                確定要移除這個商品嗎？
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">確認刪除</button>
+            </div>
+        </div>
+    </div>
+</div>   
+{% endblock content %}
+
+{% block body_script %}
+{% include "partials/cart_script_common.html" with with_quantity=false %}
+<script>
+    let deleteItemId = null;
+
+    function confirmDelete(id) {
+        deleteItemId = id;
+        const modal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+        modal.show();
+    }
+
+    document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
+        if (deleteItemId) {
+            window.location.href = `/favorites/delete/${deleteItemId}/`;
+        }
+    });
+
+</script>    
+{% endblock body_script %}

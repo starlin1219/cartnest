@@ -1,0 +1,185 @@
+{% extends "product_base.html" %}
+{% load static %}
+
+{% block title %}CUI LIANG SHI | 商品列表{% endblock title %}
+
+{% block style %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+{% endblock style %}
+
+
+
+{% block content %}
+
+<div class="container">
+    <div class="row justify-content-center" style="min-height: 32rem;">
+
+        <div class="col-11 mt-4">  
+            <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}"><i class="bi bi-house"></i></a></li>
+            
+                    {% if selected_category %}
+                        {% for cat in categories %}
+                            {% if cat.category_id|stringformat:"s" == selected_category|stringformat:"s" %}
+                                <li class="breadcrumb-item active" aria-current="page">{{ cat.category_name }}</li>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <li class="breadcrumb-item active" aria-current="page">所有商品</li>
+                    {% endif %}
+                </ol>
+            </nav>
+        </div>  
+
+        <div class="box col p-5">
+            <div class="row">
+                <div style="display: flex; align-items: center;" class="mb-3">
+                    <div class="bar"></div>
+                    <h3>商品列表</h3>
+                </div>
+                <hr style="border-top: 1px solid #999; width: 98%;" class="mx-auto">
+
+                <!-- 篩選排序 -->
+                <div class="d-flex justify-content-end mb-3">
+                    <form method="get" class="row g-2">
+                        {% if selected_category %}
+                            <input type="hidden" name="category" value="{{ selected_category }}">
+                        {% endif %}
+                        <label class="col-auto col-form-label">商品排序：</label>
+                        <div class="col-auto">
+                            <select name="sort" class="form-select" onchange="this.form.submit()">
+                                <option value="">-- 請選擇 --</option>
+                                <option value="price_asc" {% if selected_sort == 'price_asc' %}selected{% endif %}>價格：低 → 高</option>
+                                <option value="price_desc" {% if selected_sort == 'price_desc' %}selected{% endif %}>價格：高 → 低</option>
+                                <option value="latest" {% if selected_sort == 'latest' %}selected{% endif %}>最新上架</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="row" id="product-list-container">
+                    {% include "partials/product_list_items.html" %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+<!-- 最近瀏覽商品 -->
+<div class="container" id="recently-viewed-container" style="display: none;">
+    <div class="row justify-content-center">
+        <div class="box col p-5 position-relative">
+            <div class="mb-3" style="display: flex; align-items: center;">
+                <div class="bar"></div>
+                <h3>最近瀏覽商品</h3>
+            </div>
+            <hr style="border-top: 1px solid #999; width: 98%;" class="mx-auto mb-4">
+
+            <div class="swiper mySwiper">
+                <div class="swiper-wrapper mb-5" id="recently-viewed-wrapper"></div>
+                <div class="swiper-button-next"></div>
+                <div class="swiper-button-prev"></div>
+                <div class="swiper-pagination"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+
+
+{% block script %}
+
+{% include "partials/cart_script_common.html" with with_quantity=false %}
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script>
+
+    $(document).ready(function() {
+        // bindAddToCartEvents();
+        // bindFavoriteEvents();
+        
+        // 分頁按鈕 AJAX 載入商品
+        $(document).on('click', '.pagination-ajax', function (e) {
+            e.preventDefault();
+            const url = $(this).attr('href');
+
+            $.ajax({
+                url: url,
+                type: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                success: function (data) {
+                    // 正確地取出 JSON 裡的 HTML
+                    $('#product-list-container').html(data.html);
+
+                    // 更新網址不重新整理頁面
+                    window.history.pushState(null, '', url);
+
+                    // 重新綁定「加入購物車」按鈕事件
+                    bindAddToCartEvents();  
+                    bindFavoriteEvents();
+                },
+                error: function () {
+                    alert("載入商品失敗，請稍後再試！");
+                }
+            });
+        });
+    });
+
+    const recent = JSON.parse(localStorage.getItem("recentlyViewed") || "[]");
+
+    if (recent.length > 0) {
+        document.getElementById("recently-viewed-container").style.display = "block";
+        const wrapper = document.getElementById("recently-viewed-wrapper");
+
+        recent.forEach(item => {
+            wrapper.insertAdjacentHTML('beforeend', `
+                <div class="swiper-slide">
+                    <div class="card">
+                        <a href="/product_detail/?variant=${item.variant_id}">
+                            <img src="${item.image}" class="card-img-top" style="object-fit: contain; max-height: 240px;">
+                        </a>
+                        <div class="card-body p-2">
+                            <h6 class="card-title" style="font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                ${item.name} ${item.size} ${item.package !== '單入' ? item.package : ''}
+                            </h6>
+                            <p class="card-text">$${item.price}</p>
+                        </div>
+                    </div>
+                </div>
+            `);
+        });
+
+        // 等資料渲染完才初始化 Swiper
+        new Swiper(".mySwiper", {
+            slidesPerView: 5,
+            spaceBetween: 20,
+            loop: true,
+            autoplay: {
+                delay: 4000,
+                disableOnInteraction: false,
+            },
+            pagination: {
+                el: ".swiper-pagination",
+                clickable: true
+            },
+            navigation: {
+                nextEl: ".swiper-button-next",
+                prevEl: ".swiper-button-prev"
+            },
+            breakpoints: {
+                1200: { slidesPerView: 5 },
+                992: { slidesPerView: 4 },
+                768: { slidesPerView: 3 },
+                576: { slidesPerView: 2 },
+                0: { slidesPerView: 2 }
+            }
+        });
+    }
+
+
+</script>
+{% endblock script %}

@@ -1,0 +1,256 @@
+{% extends "product_base.html" %}
+{% load static %}
+
+{% block title %}
+Cui Liang Shi
+{% endblock title %}
+
+{% block style %}
+{% endblock style %}
+
+{% block head_script %}
+<script type="text/javascript">
+    $(document).ready(function() {
+        // 顯示彈跳視窗
+        $('#messageModal').modal('show');
+    });
+</script>
+{% endblock head_script %}
+
+{% block header %}
+<div class="container mb-3">
+    <form action="/search/" method="GET">
+        <div class="input-group"> 
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="search" class="form-control" id="search" name="search" placeholder="搜尋商品..." value="{{ search }}">
+        </div>
+    </form>
+</div>
+<!-- 導覽選單 -->
+<nav class="navbar navbar-expand-md navbar-light bg-light">
+    <div class="container">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo03" aria-controls="navbarTogglerDemo03" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
+            <ul class="navbar-nav w-100 d-flex flex-wrap justify-content-center text-center">
+                {% for category in categories %}
+                <li class="nav-item"><a class="nav-link {% if request.GET.category|default:'' == category.category_id|slugify %}active{% endif %}" href="{% url 'product_list' %}?category={{ category.category_id }}">{{ category.category_name }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</nav>
+{% endblock header %}
+
+{% block content %}
+{% comment %} <!-- 顯示訊息 -->
+{% if messages %}
+<script type="text/javascript">
+    {% for message in messages %}
+        alert("{{ message }}");  <!-- 使用 alert 顯示訊息 -->
+    {% endfor %}
+</script>
+{% endif %} {% endcomment %}
+<!-- 顯示訊息 -->
+{% if messages %}
+<div class="modal fade" id="messageModal" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="messageModalLabel">訊息</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                {% for message in messages %}
+                    <p>{{ message }}</p>  <!-- 顯示每條訊息 -->
+                {% endfor %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-auto">
+            <div class="carousel" id="myCarousel" data-bs-ride="carousel">
+                <ol class="carousel-indicators">
+                    <li data-bs-target="#myCarousel" data-bs-slide-to="0" class="active"></li>
+                    <li data-bs-target="#myCarousel" data-bs-slide-to="1"></li>
+                    <li data-bs-target="#myCarousel" data-bs-slide-to="2"></li>
+                </ol>      
+                <div class="carousel-inner">
+                    {% for item in promo_items %}
+                    <div class="carousel-item active" data-bs-interval="3000">
+                        <img src="/static/images/{{ item.promo_image_name }}" alt="{{ item.promo_image_name }}" class="d-block w-100">
+                    </div>
+                    {% endfor %}
+                </div>
+                <a href="#myCarousel" class="carousel-control-prev" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon"></span>
+                </a>
+                <a href="#myCarousel" class="carousel-control-next" data-bs-slide="next">
+                    <span class="carousel-control-next-icon"></span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-5">
+    <div class="row justify-content-center" style="min-height: 32rem;">
+        <div class="box col p-5">
+            <div class="row">
+                <div style="display: flex; align-items: center;" class="mb-3">
+                    <div class="bar"></div>
+                    <h3>推薦商品</h3>
+                </div>
+                <hr style="border-top: 1px solid #999; width: 98%;" class="mx-auto">
+
+                <div class="row" id="recommended-list-container">
+                    {% for item in recommended_items %}
+                    <div class="col-md-6 col-xxl-4">
+
+                        <div class="card my-4">
+                            <a href="{% url 'product_detail' %}?variant={{ item.variant_id }}">
+                                <img src="{% static 'product_images/' %}{{ item.image_name }}" class="card-img-top" alt="pic">
+                            </a>  
+                            <div class="card-body">
+                                <a href="{% url 'product_detail' %}?variant={{ item.variant_id }}">
+                                    <h5 class="card-title" style="font-size: 1.3em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{item.product_name}}&nbsp;{{item.size}}
+                                        {% if item.package != "單入" %}
+                                            &nbsp;{{item.package}}
+                                        {% endif %}
+                                    </h5>
+                                </a>
+                                <p class="card-text" style="font-size: 1.2rem;">$ {{item.price}}</p>
+                                <div class="d-flex justify-content-end">
+
+                                    {% if login_status %}
+                                        <i class="bi {% if item.variant_id in favorite_variants %}bi-heart-fill{% else %}bi-heart{% endif %}
+                                            text-danger favorite-icon me-3" 
+                                            style="font-size: 2rem; cursor: pointer;"
+                                            data-variant-id="{{ item.variant_id }}">
+                                        </i>
+                                    {% else %}
+                                        <i class="bi bi-heart text-secondary me-3"
+                                            style="font-size: 2rem; cursor: not-allowed;"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            data-bs-title="請先登入才能追蹤該商品">
+                                        </i>
+                                    {% endif %}
+                    
+                                    <!-- 加入購物車按鈕 (使用 data-* 屬性來傳遞參數) -->
+                                    <button 
+                                        class="btn btn-primary add-to-cart" 
+                                        data-variant-id="{{ item.variant_id }}" 
+                                        data-product-id="{{ item.product_id }}"
+                                        data-category-ids="{{ item.category_ids|join:',' }}"
+                                        data-name="{{ item.product_name }}" 
+                                        data-size="{{ item.size }}" 
+                                        data-package="{{ item.package }}" 
+                                        data-price="{{ item.price }}" 
+                                        data-image="{{ item.image_name }}"
+                                        {% if item.stock_total == 0 %} disabled {% endif %}>
+                    
+                                        {% if item.stock_total == 0 %}缺貨中...{% else %}加入購物車{% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>    
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-5">
+    <div class="row justify-content-center" style="min-height: 32rem;">
+        <div class="box col p-5">
+            <div class="row">
+                <div style="display: flex; align-items: center;" class="mb-3">
+                    <div class="bar"></div>
+                    <h3>熱銷商品</h3>
+                </div>
+                <hr style="border-top: 1px solid #999; width: 98%;" class="mx-auto">
+
+                <div class="row" id="hot-list-container">
+                    {% for item in hot_items %}
+                    <div class="col-md-6 col-xxl-4">
+                        <div class="card my-4">
+                            <a href="{% url 'product_detail' %}?variant={{ item.variant_id }}">
+                                <img src="{% static 'product_images/' %}{{ item.image_name }}" class="card-img-top" alt="pic">
+                            </a>  
+                            <div class="card-body">
+                                <a href="{% url 'product_detail' %}?variant={{ item.variant_id }}">
+                                    <h5 class="card-title" style="font-size: 1.3em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{item.product_name}}&nbsp;{{item.size}}
+                                        {% if item.package != "單入" %}
+                                            &nbsp;{{item.package}}
+                                        {% endif %}
+                                    </h5>
+                                </a>
+                                <p class="card-text" style="font-size: 1.2rem;">$ {{item.price}}</p>
+                                <div class="d-flex justify-content-end">
+
+                                    {% if login_status %}
+                                        <i class="bi {% if item.variant_id in favorite_variants %}bi-heart-fill{% else %}bi-heart{% endif %}
+                                            text-danger favorite-icon me-3" 
+                                            style="font-size: 2rem; cursor: pointer;"
+                                            data-variant-id="{{ item.variant_id }}">
+                                        </i>
+                                    {% else %}
+                                        <i class="bi bi-heart text-secondary me-3"
+                                            style="font-size: 2rem; cursor: not-allowed;"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            data-bs-title="請先登入才能追蹤該商品">
+                                        </i>
+                                    {% endif %}
+                    
+                                    <!-- 加入購物車按鈕 (使用 data-* 屬性來傳遞參數) -->
+                                    <button 
+                                        class="btn btn-primary add-to-cart" 
+                                        data-variant-id="{{ item.variant_id }}" 
+                                        data-product-id="{{ item.product_id }}"
+                                        data-category-ids="{{ item.category_ids|join:',' }}"
+                                        data-name="{{ item.product_name }}" 
+                                        data-size="{{ item.size }}" 
+                                        data-package="{{ item.package }}" 
+                                        data-price="{{ item.price }}" 
+                                        data-image="{{ item.image_name }}"
+                                        {% if item.stock_total == 0 %} disabled {% endif %}>
+                    
+                                        {% if item.stock_total == 0 %}缺貨中...{% else %}加入購物車{% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>    
+                    {% endfor %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+
+{% block script %}
+
+{% include "partials/cart_script_common.html" with with_quantity=false %}
+<script></script>
+
+{% endblock script %}
+
+

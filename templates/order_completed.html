@@ -1,0 +1,99 @@
+{% extends "cart_base.html" %}
+{% load static %}
+
+{% block title %}CUI LIANG SHI | 購物車{% endblock title %}
+
+{% block style %}
+<style>
+    /* 讓 body 和 html 佔滿整個視窗高度 */
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* 使用 flexbox 讓 container 佔滿剩餘空間 */
+    .container-fluid-md {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+
+    /* 內容區域自動填滿剩餘空間 */
+    .content {
+        flex: 1;
+        display: flex;
+        align-items: start;
+        justify-content: center;
+    }
+
+    @media (min-width: 992px) {
+            .box {
+                max-width: 70%;
+            }
+        }
+    
+</style>
+{% endblock style %}
+
+<body>
+    <div class="container-fluid-md">
+        <!-- 標題 -->
+        <div class="row" >
+            <nav class="navbar theme d-flex">
+                <h1 class="pe-2 brand_title">
+                    <a href="{% url 'home' %}" class="me-2">CUI LIANG SHI&nbsp;&nbsp;|</a> 
+                    <span style="font-size: 1.8rem;">購物車</span>
+                </h1>
+                <a href="{% url 'home' %}" class="go_home d-block pe-1" style="font-size: 0.8rem; margin-right: 15%;">回到首頁</a> 
+            </nav> 
+        </div>
+
+        {% block content %}
+        <div class="step-container justify-content-center mt-5">
+            <div class="step active">
+                <span class="circle">1</span>
+                <span class="label">購物車明細</span>
+            </div>
+            <div class="divider"></div>
+            <div class="step active">
+                <span class="circle">2</span>
+                <span class="label">訂單確認、填寫訂購資料</span>
+            </div>
+            <div class="divider"></div>
+            <div class="step active">
+                <span class="circle">3</span>
+                <span class="label">購買完成</span>
+            </div>
+        </div>
+
+        <div class="row justify-content-center content" style="min-height: 32rem;">
+            <div class="box col p-5">    
+                <div class="row">
+                    <div style="display: flex; align-items: center;" class="mb-3">
+                        <div class="bar"></div>
+                        <h3 class="pt-1">訂購完成</h3>
+                    </div>
+                    <hr style="border-top: 1px solid #999; width: 98%;" class="mx-auto">
+                    <div>
+                        <br>
+                        <h4>感謝訂購，我們已經收到您的訂單 !</h4>
+                        <h4>您的訂單編號為：{{ order_number }}</h4><br><br><br><br><br>
+                        <a href="{% url 'orders' %}"><button class="btn btn-primary w-100">訂單查詢</button></a>
+                        <a href="{% url 'home' %}"><button class="btn btn-outline-primary w-100 mt-4">繼續購物</button></a>
+                    </div>
+                    
+                </div>
+                
+            </div>
+        </div>
+            
+        <footer class="ft mt-3 row">
+                    <div class="col m-3 text-center" style="color: #F9FCFF;">
+                        &copy;2025 CUI LIANG SHI 化妝品有限公司
+                    </div>
+        </footer>
+        {% endblock content %}
+    </div>    
+
+    {% block script %}{% endblock script %}

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}
+<title>Cui Liang Shi | 會員中心 | 修改密碼</title>
+{% endblock title %}
+
+{% block style %}
+.nav-link {
+    color: inherit; /* 繼承父元素的顏色，這樣就不會顯示為藍色 */
+    text-decoration: none; /* 移除下劃線 */
+}
+{% endblock style %}
+
+{% block header %}
+{% endblock header %}
+
+{% block content %}
+<div class="wrapper container mt-5">
+  <ul class="nav nav-tabs">
+    <li class="nav-item">
+      <a class="nav-link active" href="#">修改密碼</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link disabled" href="/coupons/">優惠券</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link disabled" href="/orders/">訂單查詢</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link disabled" href="/favorites/">追蹤清單</a>
+    </li>
+  </ul>
+  <div class="row justify-content-center" style="min-height: 32rem;">
+    <div class="box col-xxl-8 col-xl-9 col-lg-10 px-4 py-3">    
+      <div class="row">
+        <div style="display: flex; align-items: center;" class="ms-2 my-3">
+          <div class="bar"></div>
+          <h4 class="pt-1">修改密碼</h4>
+          <div class="ms-auto me-2">
+            <a href="/users/{{user_id}}" class="btn btn-light btn-outline-secondary text-nowrap">取消並返回</a>
+          </div>
+        </div>
+        <hr style="border-top: 1px solid #999; width: 98%;" class="mx-auto">
+        <div class="row">
+          <div class="col-8"> 
+            <form action="/users/edit/" method="post" class="ms-3 my-2">
+              {% csrf_token %}
+              <div class="row mb-4">
+                <label for="current_password" class="col-sm-3 col-form-label">舊密碼</label>
+                <div class="col-sm-9">
+                  <input type="password" id="current_password" name="current_password" class="form-control" required>
+                </div>
+              </div>
+
+              <div class="row mb-4">
+                <label for="new_password" class="col-sm-3 col-form-label">新密碼</label>
+                <div class="col-sm-9">
+                  <input type="password" id="new_password" name="new_password" class="form-control" required>
+                </div>
+              </div>
+
+              <div class="row mb-4">
+                <label for="confirm_password" class="col-sm-3 col-form-label">確認新密碼</label>
+                <div class="col-sm-9">
+                  <input type="password" id="confirm_password" name="confirm_password" class="form-control" required>
+                </div>
+              </div>
+              
+              {% if message %}
+              <div class="col-auto text-danger mb-3">{{ message }}</div>
+              {% else %}
+              <div class="col-auto text-danger mb-3">&nbsp;</div>
+              {% endif %}
+
+              <div class="d-grid gap-2 col-12">
+                <button type="submit" class="btn btn-warning">確認修改</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block body_script %}
+
+{% endblock body_script %}

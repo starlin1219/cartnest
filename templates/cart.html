@@ -1,0 +1,869 @@
+{% extends "cart_base.html" %}
+{% load static %}
+
+{% block title %}CUI LIANG SHI | 購物車{% endblock title %}
+
+{% block style %}
+<style>
+    @media (max-width: 992px) {
+        .subtotal {
+            display: none;
+        }
+    }
+    
+    .table td {
+        padding: 2rem 1rem 2rem 1rem;
+    }
+    .table th {
+        padding: 0 0 1rem 1rem
+    }
+    /* 控制整體對齊效果 */
+    .table td, .table th {
+        vertical-align: middle;
+    }
+
+    input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        vertical-align: middle;
+    }
+
+    
+    .quantity-control {
+        display: flex;
+        align-items: center;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        overflow: hidden;
+        width: 90px;
+        background-color: #f9f9f9;
+    }
+
+    .quantity-btn, 
+    .quantity-input {
+        width: 30px; /* 讓所有元素的寬度相等 */
+        height: 30px;
+        text-align: center;
+        font-size: 1rem;
+        font-weight: bold;
+        border: none;
+        background-color: #ffffff;
+        color: #333;
+        transition: background-color 0.2s;
+    }
+
+    .quantity-btn:hover {
+        background-color: #e0e0e0;
+        cursor: pointer;
+    }
+
+    /* 移除 input number 預設箭頭 */
+    .quantity-input::-webkit-outer-spin-button,
+    .quantity-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .quantity-input[type="number"] {
+        -moz-appearance: textfield;
+        border-left: 1px solid #ccc;
+        border-right: 1px solid #ccc;
+    }
+
+    /* 未達免運時（紅色） */
+    .remaining-for-free-shipping.not-free {
+        color: #e74c3c; /* 紅色 */
+    }
+
+    /* 已達免運時（藍色） */
+    .remaining-for-free-shipping.free {
+        color: #3498db; /* 藍色 */
+    }
+
+    .coupon-input {
+        border: 1px solid #ccc;
+        border-right: none;
+        padding: 10px;
+        color: #999;
+        background-color: #f9f9f9;
+        outline: none;
+        box-shadow: none;
+        border-radius: 6px 0 0 6px;
+        width: 50%; /* 調整寬度 */
+        max-width: 250px;
+    }
+
+    .coupon-btn {
+        background-color: #d3d3d3; /* 更淺的灰色 */
+        border: 1px solid #d3d3d3;
+        color: #333;
+        padding: 10px 20px;
+        border-radius: 0 6px 6px 0;
+        transition: background-color 0.2s ease;
+    }
+
+    .coupon-btn:hover {
+        background-color: #b0b0b0;
+        border-color: #b0b0b0;
+    }
+
+
+    /* 調整折扣項目樣式 */
+    .accordion-button {
+        background-color: #f9f9f9;
+        color: #333;
+        font-weight: bold;
+    }
+
+    .accordion-button:focus {
+        box-shadow: none;
+    }
+
+    .accordion-button:not(.collapsed) {
+        background-color: #e0e0e0;
+    }
+
+    .accordion-body {
+        background-color: #f9f9f9;
+    }
+
+</style>
+{% endblock style %}
+
+
+{% block content %}
+<div class="step-container justify-content-center mt-5">
+    <div class="step active">
+        <span class="circle">1</span>
+        <span class="label">購物車明細</span>
+    </div>
+    <div class="divider"></div>
+    <div class="step">
+        <span class="circle">2</span>
+        <span class="label">訂單確認、填寫訂購資料</span>
+    </div>
+    <div class="divider"></div>
+    <div class="step">
+        <span class="circle">3</span>
+        <span class="label">購買完成</span>
+    </div>
+</div>
+
+<div class="row justify-content-center" style="min-height: 32rem;">
+    <div class="box col-xxl-8 col-xl-9 col-lg-10 px-4 py-3">    
+        <div class="row">
+            
+            <div style="display: flex; align-items: center;" class="ms-2 my-3">
+                <div class="bar"></div>
+                <h4 class="pt-1">購物車明細</h4>
+            </div>
+            <hr style="border-top: 1px solid #999; width: 98%;" class="mx-auto">
+
+            <div class="col">
+                {% if cart.items %}
+                <table class="table">
+                
+                    <tr>
+                        <th>
+                            <input type="checkbox" onclick="toggleSelectAll(this)">
+                        </th>
+                        <th colspan="2">
+                            商品
+                        </th>
+                        <th>
+                            商品數量
+                        </th>
+                        <th class="subtotal">
+                            小計
+                        </th>
+                    </tr>
+
+                    {% for key, item in cart.items %}
+                    <tr data-key="{{ key }}">
+                        <td>
+                            <!-- 如果 cart.items 存在，預設勾選 -->
+                            <input type="checkbox" class="item-checkbox" onchange="updateTotal()" checked>
+                        </td>
+                        <td>
+                            <a href="{% url 'product_detail' %}?variant={{ key }}">
+                                <img src="{% static 'product_images/' %}{{ item.image }}" alt="{{ item.name }}" style="width: 10rem;">
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{% url 'product_detail' %}?variant={{ key }}">
+                                <p>
+                                {{ item.name }} {{ item.size }} 
+                                {% if item.package != '單入' %}{{ item.package }}{% endif %}
+                                </p>
+                                <p>${{ item.price }}</p>
+                            </a>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-column">
+                                <div class="quantity-control">
+                                    <button class="quantity-btn" onclick="decreaseQuantity(this, '{{ key }}')">−</button>
+                                    <input type="number" class="quantity-input" value="{{ item.quantity }}" min="1" data-key="{{ key }}" data-prev="{{ item.quantity }}">
+                                    <button class="quantity-btn" onclick="increaseQuantity(this, '{{ key }}')">+</button>
+                                </div>
+                                <div class="d-flex mt-3 ms-3">
+                                    <i class="bi {% if key in favorite_variants %}bi-heart-fill{% else %}bi-heart{% endif %}
+                                        text-danger favorite-icon me-3"
+                                        style="font-size: 1.3rem; cursor: pointer;"
+                                        data-variant-id="{{ key }}">
+                                    </i>
+
+                                    <!-- 點擊時觸發 JavaScript，但不會跳轉頁面 -->
+                                    <a href="javascript:void(0)" onclick="removeCartItem('{{ key }}')"><i class="bi bi-trash3 fs-5"></i></a>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="subtotal">
+                            ${{ item.subtotal }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    <tr id="gift-row" class="{% if gifts|length > 0 %}d-table-row{% else %}d-none{% endif %}">
+                        <td colspan="5">
+                            <p>活動贈品:</p>
+                            <ul id="gift-list">
+                                {% for gift in gifts %}
+                                    <li class="mt-2">
+                                        {{ gift.promo_name }}
+                                        {{ gift.conditions }}
+                                        - 贈品: 
+                                        {{ gift.product_name }} 
+                                        {% if gift.size %}- {{ gift.size }}{% endif %}
+                                        {% if gift.package %}
+                                            {% if gift.package != '單入' %}
+                                            - {{ gift.package }}
+                                            {% endif %}
+                                        {% endif %}
+                                        x {{ gift.quantity }}
+                                        {% if gift.source == 'auto' %}
+                                            <span class="badge bg-success ms-2">活動</span>
+                                        {% elif gift.source == 'coupon' %}
+                                            <span class="badge bg-primary ms-2">優惠碼</span>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+
+
+                    <tr>
+                        <td colspan="5">
+                            <p>商品總金額: <span class="total-amount">${{ total }}</span></p>
+                            <p>運費: <span class="shipping-cost">$100</span></p>
+                            <p class="remaining-for-free-shipping"></p>
+                    
+                            <!-- 優惠碼輸入框 -->
+                            <p class="input-group">
+                                <input type="search" class="form-control coupon-input" id="coupon-code" placeholder="輸入優惠碼" value="{{ request.session.promo_code }}">
+                                <button class="btn coupon-btn" type="button" onclick="applyCoupon()" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="點擊套用優惠券">
+                                    <i class="bi bi-check"></i>
+                                </button>
+                            </p> 
+                            
+                            <p>折扣: <span id="discount-amount">${{ discount }}</span></p>
+                            
+                            <!-- 折扣 Accordion -->
+                            <p>
+                                <div class="accordion" id="discountAccordion"> <!-- style="display: none;" -->
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="headingDiscount">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDiscount" aria-expanded="false" aria-controls="collapseDiscount">
+                                                查看優惠項目
+                                            </button>
+                                        </h2>
+                                        <div id="collapseDiscount" class="accordion-collapse collapse" aria-labelledby="headingDiscount" data-bs-parent="#discountAccordion">
+                                            <div class="accordion-body">
+                                                {% if active_promotions %}
+                                                    <ul>
+                                                        {% for promo in active_promotions %}
+                                                            <li>{{ promo.promo_name }} {{promo.conditions}}- 折扣 ${{ promo.discount }}</li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% else %}
+                                                    <p>尚未套用優惠</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="5">
+                            <h5>結帳金額: <span class="final-amount">${{ final_total }}</span></h5>
+                            <button id="checkout-btn" class="btn btn-primary w-100 mt-3" onclick="goToCheckOrder()">結帳</button>
+
+                        </td>
+                    </tr>
+                
+                    
+                </table>
+
+                {% else %}
+                    <!-- 顯示空購物車畫面 -->
+                    <div class="text-center py-5">
+                        <i class="bi bi-cart-x fs-1 text-muted"></i>
+                        <h4 class="text-muted mt-3">您的購物車是空的！</h4>
+                        <a href="{% url 'home' %}" class="btn btn-primary mt-4">繼續購物</a>
+                    </div>
+                {% endif %}
+                
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+
+{% block UI %}
+<!-- 錯誤提示 Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="errorModalLabel">提示</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" id="modalCloseBtn"></button>
+            </div>
+            <div class="modal-body" id="errorModalMessage">
+                發生錯誤，請再試一次。
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="modalRedirectBtn" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 刪除確認 Modal -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title d-flex align-items-center" id="confirmDeleteLabel">
+                    <i class="bi bi-trash3-fill text-danger me-2 fs-4"></i>
+                    確認刪除
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
+            </div>
+            <div class="modal-body">
+                確定要移除這個商品嗎？
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">確認刪除</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock UI %}
+
+{% block script %}
+<script>
+    
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // 取得所有 checkbox 並預設勾選
+        document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+            checkbox.checked = true;
+    
+            checkbox.addEventListener('change', () => {
+                updateTotal();
+                updateCartSummary();
+                updateCheckoutButton();
+            });
+        });
+
+        // 設定「全選框」同步為勾選狀態
+        let selectAllCheckbox = document.querySelector('input[type="checkbox"][onclick="toggleSelectAll(this)"]');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = true;
+        }
+
+        // 頁面載入時更新總金額與折扣
+        updateTotal();
+        updateCheckoutButton();
+
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+            new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // 若有優惠碼 → 套用已套用樣式
+        const promoCode = document.getElementById('coupon-code')?.value.trim();
+        if (promoCode) {
+            switchToAppliedStyle();
+        }
+        
+    });
+
+    // 取得 CSRF token
+    const csrftoken = '{{ csrf_token }}';
+
+    // 全局設定 AJAX 的 CSRF token
+    $.ajaxSetup({
+        headers: { "X-CSRFToken": csrftoken }
+    });
+
+    function showErrorModal(message, title = '提示') {
+        const modal = new bootstrap.Modal(document.getElementById('errorModal'));
+        document.getElementById('errorModalLabel').innerText = title;
+        document.getElementById('errorModalMessage').innerText = message;
+        modal.show();
+    }        
+
+    $('.favorite-icon').click(function () {
+        const icon = $(this);
+        const variantId = icon.data('variant-id');
+    
+        $.ajax({
+            url: "{% url 'toggle_favorite' %}",
+            type: 'POST',
+            data: { 'variant_id': variantId },
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            success: function (response) {
+                if (response.status === 'added') {
+                    icon.removeClass('bi-heart').addClass('bi-heart-fill');
+                } else if (response.status === 'removed') {
+                    icon.removeClass('bi-heart-fill').addClass('bi-heart');
+                }
+            },
+            error: function () {
+                showErrorModal('操作失敗，請重新登入或稍後再試');
+            }
+        });
+    });
+
+
+    function updateCheckoutButton() {
+        const checkboxes = document.querySelectorAll('.item-checkbox');
+        const checkoutBtn = document.getElementById('checkout-btn');
+    
+        if (!checkoutBtn) return;
+    
+        const hasChecked = Array.from(checkboxes).some(checkbox => checkbox.checked);
+        const hasItems = checkboxes.length > 0;
+    
+        if (!hasItems || !hasChecked) {
+            checkoutBtn.setAttribute('disabled', 'disabled');
+        } else {
+            checkoutBtn.removeAttribute('disabled');
+        }
+    }
+    
+
+    // 選取或取消選取所有商品
+    function toggleSelectAll(source) {
+        let checkboxes = document.querySelectorAll('.item-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = source.checked;
+        });
+        updateTotal(); // 更新總金額
+        updateCartSummary();      
+        updateCheckoutButton();
+    }
+
+    // 增加數量
+    function increaseQuantity(button) {
+        let input = button.closest('.quantity-control').querySelector('.quantity-input');
+        let key = input.getAttribute('data-key');
+        let value = parseInt(input.value);
+
+        input.setAttribute('data-prev', value); // 記錄目前數值
+        input.value = value + 1;
+
+        updateCartItem(key, input.value);
+    }
+
+    // 減少數量（最小值為 1）
+    function decreaseQuantity(button) {
+        let input = button.closest('.quantity-control').querySelector('.quantity-input');
+        let key = input.getAttribute('data-key');
+        let value = parseInt(input.value);
+
+        if (value > 1) {
+            input.setAttribute('data-prev', value); // 記錄目前數值
+            input.value = value - 1;
+            updateCartItem(key, input.value);
+        } else if (value === 1) {
+            // 顯示確認框
+            if (removeCartItem(key)) {
+                
+            } else {
+                input.value = 1; // 若使用者取消，維持 value 在 1
+            }
+        }
+    }
+
+    $(document).on('focusin', '.quantity-input', function () {
+        $(this).attr('data-prev', this.value);  // 當聚焦時儲存目前值
+    });
+
+    // 監聽輸入框的值改變事件
+    $(document).on('change', '.quantity-input', function() {
+        let key = $(this).data('key');
+        let quantity = parseInt($(this).val());
+
+        if (quantity < 1) {
+            quantity = 1;
+            $(this).val(quantity);
+        }
+
+        updateCartItem(key, quantity);
+    });
+
+    // 購物車商品數量變動時
+    function updateCartItem(key, quantity) {
+        if (quantity < 1) {
+            quantity = 1; // 最小值限制為 1
+        }
+
+        const input = $(`.quantity-input[data-key="${key}"]`);
+        const prevValue = input.attr('data-prev') || input.val();  // 取得上一次紀錄的數量
+
+        $.ajax({
+            url: `/update_cart_item/${key}/${quantity}/`,
+            type: 'POST',
+            headers: { "X-CSRFToken": csrftoken },
+            success: function(response) {
+                if (response.success) {
+                    // 更新小計
+                    $(`tr[data-key="${key}"]`).find('.subtotal').text(`$${response.subtotal}`);
+                    updateTotal(); // 更新總金額
+                    updateCartSummary();
+
+                    // 更新購物車數量徽章
+                    if (response.cart_count !== undefined) {
+                        if (response.cart_count > 0) {
+                            $('#cart-count').text(response.cart_count).show();
+                        } else {
+                            $('#cart-count').text('0').hide();
+                        }
+                    }
+
+                    // 記錄這次成功的值
+                    input.attr('data-prev', quantity);
+
+                } else {
+                    // 若無 success，但 status 200，顯示錯誤訊息
+                    showErrorModal(response.message || "更新失敗");
+                    input.val(prevValue).focus();  // 還原並聚焦
+                }
+            },
+            error: function(xhr) {
+                if (xhr.status === 400 && xhr.responseJSON?.stock_limit !== undefined) {
+                    showErrorModal(`庫存不足，最多只能購買 ${xhr.responseJSON.stock_limit} 件` || xhr.responseJSON.message);
+                    // 重設數量為庫存上限
+                    input.val(xhr.responseJSON.stock_limit).focus();  // 自動修正為上限
+                    input.attr('data-prev', xhr.responseJSON.stock_limit);
+                } else {
+                    showErrorModal('更新數量失敗，請稍後再試');
+                    input.val(prevValue).focus();  // 還原並聚焦
+                }
+            }
+        });
+    }
+
+    let deleteTargetKey = null;
+
+    function removeCartItem(key) {
+        deleteTargetKey = key;  // 暫存 key
+        const modal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+        modal.show();
+    }
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+        if (!deleteTargetKey) return;
+    
+        $.ajax({
+            url: `/remove_cart_item/${deleteTargetKey}/`,
+            type: 'POST',
+            headers: { "X-CSRFToken": csrftoken },
+            success: function(response) {
+                if (response.success) {
+                    $(`tr[data-key="${deleteTargetKey}"]`).remove();
+    
+                    if (response.cart_count > 0) {
+                        $('#cart-count').text(response.cart_count).show();
+                    } else {
+                        $('#cart-count').hide();
+                    }
+    
+                    if (document.querySelectorAll('tr[data-key]').length === 0) {
+                        $('.table').remove();
+                        $('.col').append(`
+                            <div class="text-center py-5">
+                                <i class="bi bi-cart-x fs-1 text-muted"></i>
+                                <h4 class="text-muted mt-3">您的購物車是空的！</h4>
+                                <a href="/" class="btn btn-primary mt-4">繼續購物</a>
+                            </div>
+                        `);
+                    } else {
+                        updateTotal();
+                        updateCartSummary();
+                    }
+    
+                    bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal')).hide();
+                }
+            }
+        });
+    });        
+
+
+    // 獨立處理運費邏輯
+    function calculateShipping(total) {
+        // 如果總金額 ≥ 2500，免運費，否則運費為 100
+        if (total >= 2500) {
+            return 0;
+        }
+        return 100;
+    }
+
+    // 獨立處理剩餘金額的計算
+    function calculateRemainingForFreeShipping(total) {
+        const freeShippingThreshold = 2500; // 免運費門檻
+        const messageElement = document.querySelector('.remaining-for-free-shipping');
+
+        if (total >= freeShippingThreshold) {
+            // 已達免運標準 → 設定藍色樣式
+            messageElement.innerText = '已達免運門檻 🎉';
+            messageElement.classList.remove('not-free');
+            messageElement.classList.add('free');
+        } else {
+            // 未達免運標準 → 設定紅色樣式
+            const remaining = freeShippingThreshold - total;
+            messageElement.innerText = `還差 $${remaining} 才能免運`;
+            messageElement.classList.remove('free');
+            messageElement.classList.add('not-free');
+        }
+    }
+
+    function applyCoupon() {
+        let couponCode = document.getElementById('coupon-code').value.trim();
+    
+        if (!couponCode) {
+            showToast('請輸入優惠碼', false);
+            return;
+        }
+    
+        // 按下時先顯示 loading
+        const btn = document.querySelector('.coupon-btn');
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm text-success" role="status"></span>`;
+        btn.setAttribute('disabled', 'disabled');
+    
+        $.ajax({
+            url: '/apply_coupon/',
+            type: 'POST',
+            headers: { "X-CSRFToken": csrftoken },
+            data: {
+                coupon_code: couponCode,
+                'selected_keys': JSON.stringify(getSelectedKeys())
+            },
+            success: function(response) {
+                if (response.success) {
+                    updateCartSummary();
+                    showToast(response.message, true);
+
+                    setTimeout(() => {
+                        switchToAppliedStyle(); // 過 300ms 再換樣式
+                    }, 300);
+                    //switchToAppliedStyle();
+                } else {
+                    showToast(response.message, false);
+                    resetCouponButton();
+                }
+            },
+            error: function() {
+                showToast('套用失敗，請稍後再試', false);
+                resetCouponButton();
+            }
+        });
+    }
+
+    function cancelCoupon() {
+        $.ajax({
+            url: '/cancel_coupon/',
+            type: 'POST',
+            headers: { "X-CSRFToken": csrftoken },
+            success: function(response) {
+                if (response.success) {
+                    $('#coupon-code').val(''); // 清空欄位
+                    updateCartSummary();
+                    resetCouponButton();
+                    showToast('已取消優惠碼', true);
+                }
+            },
+            error: function() {
+                showToast('取消失敗，請稍後再試', false);
+            }
+        });
+    }
+
+    function switchToAppliedStyle() {
+        const btn = document.querySelector('.coupon-btn');
+
+        // 移除舊的 tooltip 實例
+        if (bootstrap.Tooltip.getInstance(btn)) {
+            bootstrap.Tooltip.getInstance(btn).dispose();
+        }
+
+        btn.innerHTML = `<i class="bi bi-check-circle-fill text-success"></i>`;
+        btn.classList.add('bg-light');
+        btn.setAttribute('data-bs-toggle', 'tooltip');
+        btn.setAttribute('data-bs-placement', 'top');
+        btn.setAttribute('data-bs-title', '按一下取消套用');
+        btn.onclick = cancelCoupon;
+        btn.removeAttribute('disabled');
+
+        // 初始化 tooltip
+        new bootstrap.Tooltip(btn);
+    }
+    
+    function resetCouponButton() {
+        const btn = document.querySelector('.coupon-btn');
+
+        // 移除舊的 tooltip 實例
+        if (bootstrap.Tooltip.getInstance(btn)) {
+            bootstrap.Tooltip.getInstance(btn).dispose();
+        }
+
+        btn.innerHTML = `<i class="bi bi-check"></i>`;
+        btn.classList.remove('bg-light');
+        btn.setAttribute('data-bs-toggle', 'tooltip');
+        btn.setAttribute('data-bs-placement', 'top');
+        btn.setAttribute('data-bs-title', '點擊套用優惠券');
+        btn.onclick = applyCoupon;
+        btn.removeAttribute('disabled');
+
+        // 重新啟用 tooltip
+        new bootstrap.Tooltip(btn);
+    }
+        
+
+    // 獲取選取的商品 key
+    function getSelectedKeys() {
+        let selectedKeys = [];
+        document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+            if (checkbox.checked) {
+                selectedKeys.push(checkbox.closest('tr').getAttribute('data-key'));
+            }
+        });
+        return selectedKeys;
+    }
+
+    // 勾選商品時即時更新購物車金額與折扣
+    function updateCartSummary() {
+        let selectedKeys = getSelectedKeys();
+
+        $.ajax({
+            url: '/update_cart_summary/',
+            type: 'POST',
+            headers: { "X-CSRFToken": csrftoken },
+            data: {
+                'selected_keys': JSON.stringify(selectedKeys)
+            },
+            success: function(response) {
+                $('.total-amount').text(`$${response.total}`);
+                $('.shipping-cost').text(`$${response.shipping_cost}`);
+                $('#discount-amount').text(`$${response.discount}`);
+                $('.final-amount').text(`$${response.final_total}`);
+
+                // 更新優惠項目（動態生成 ul 或 p）
+                let promoContainer = $('#collapseDiscount .accordion-body');
+                promoContainer.empty();  // 先清空內容
+
+                if (response.active_promotions.length > 0) {
+                    let promoList = $('<ul></ul>');
+                    response.active_promotions.forEach(promo => {
+                        promoList.append(`<li>${promo.promo_name} ${promo.conditions}- 折扣 $${promo.discount}</li>`);
+                    });
+                    promoContainer.append(promoList);
+                } else {
+                    promoContainer.append('<p>尚未套用優惠</p>');
+                }
+
+                // 清除舊的贈品列表，避免重複顯示
+                $('#gift-list').empty();
+                // 更新贈品
+                if (response.gifts.length > 0) {
+                    
+                    let giftList = response.gifts.map(gift =>
+                        `<li class="mt-2">
+                            ${gift.promo_name}
+                            ${gift.conditions}
+                            - 贈品: 
+                            ${gift.product_name}
+                            ${gift.size ? `- ${gift.size}` : ''}
+                            ${gift.package && gift.package !== '單入' ? `- ${gift.package}` : ''}
+                            x ${gift.quantity}
+                            ${gift.source === 'auto' ? '<span class="badge bg-success ms-2">活動</span>' : ''}
+                            ${gift.source === 'coupon' ? '<span class="badge bg-primary ms-2">優惠碼</span>' : ''}
+                        </li>`
+                    ).join('');
+                    $('#gift-list').html(giftList);
+                    $('#gift-row').removeClass('d-none').addClass('d-table-row');
+                    
+                } else {
+                    $('#gift-row').addClass('d-none');
+                }
+            }
+        });
+    }
+
+    // 更新總金額
+    function updateTotal() {
+        let total = 0;
+        let discount = parseFloat(document.querySelector('#discount-amount').innerText.replace('$', '').trim()) || 0; // 獲取當前折扣
+
+        // 只加總選取的商品
+        document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+            if (checkbox.checked) {
+                let row = checkbox.closest('tr');
+                let value = row.querySelector('.subtotal').innerText.replace('$', '').trim();
+                total += Number(value) || 0;
+            }
+        });
+
+        let shipping = calculateShipping(total);
+
+        let finalTotal = total + shipping - discount;
+
+        // 更新顯示
+        document.querySelector('.total-amount').innerText = `$${total}`;
+        document.querySelector('.final-amount').innerText = `$${finalTotal}`;
+        document.querySelector('.shipping-cost').innerText = `$${shipping}`;
+
+        // 更新剩餘金額提示
+        calculateRemainingForFreeShipping(total);
+
+    }
+
+
+    function goToCheckOrder() {
+        const selectedKeys = getSelectedKeys();  // 已有的函式
+        $.ajax({
+            url: '/save_selected_items/',
+            type: 'POST',
+            headers: { "X-CSRFToken": csrftoken },
+            data: {
+                'selected_keys': JSON.stringify(selectedKeys)
+            },
+            success: function(response) {
+                if (response.success) {
+                    window.location.href = "/check_order/";
+                }
+            }
+        });
+    }  
+
+
+</script>
+{% endblock script %}

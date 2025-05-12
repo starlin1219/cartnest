@@ -1,0 +1,126 @@
+{% extends "product_base.html" %}
+{% load static %}
+
+{% block load %}
+{% load custom_filters %}
+{% endblock load %}
+
+
+{% block title %}
+Cui Liang Shi | 商品搜尋
+{% endblock title %}
+
+{% block style %}
+
+{% endblock style %}
+
+{% block header %}
+<div class="container mb-3">
+    <form action="/search/" method="GET">
+        <div class="input-group"> 
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="search" class="form-control" id="search" name="search" placeholder="搜尋商品...">
+        </div>
+    </form>
+</div>
+
+<nav class="navbar navbar-expand-md navbar-light bg-light">
+    <div class="container">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo03" aria-controls="navbarTogglerDemo03" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
+            <ul class="navbar-nav w-100 d-flex flex-wrap justify-content-center text-center">
+                {% for category in categories %}
+                <li class="nav-item"><a class="nav-link {% if request.GET.category|default:'' == category.category_id|slugify %}active{% endif %}" href="{% url 'product_list' %}?category={{ category.category_id }}">{{ category.category_name }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</nav>
+{% endblock header %}
+
+{% block content %}
+
+<div class="wrapper container mt-5">
+    <div class="row justify-content-center" style="min-height: 32rem;">
+        <div class="box col p-5">
+            <div class="row">
+                <div style="display: flex; align-items: center;" class="mb-3">
+                    <div class="bar"></div>
+                    <h3>搜尋結果</h3>
+                </div>
+                <hr style="border-top: 1px solid #999; width: 98%;" class="mx-auto">
+
+                {% if page_obj %}
+                    <!-- 篩選排序 -->
+                    <div class="d-flex justify-content-end mb-3">
+                        <form method="get" class="row g-2">
+                            {% if search %}
+                                <input type="hidden" name="search" value="{{ search }}">
+                            {% endif %}
+                            <label class="col-auto col-form-label">商品排序：</label>
+                            <div class="col-auto">
+                                <select name="sort" class="form-select" onchange="this.form.submit()">
+                                    <option value="">-- 請選擇 --</option>
+                                    <option value="price_asc" {% if selected_sort == 'price_asc' %}selected{% endif %}>價格：低 → 高</option>
+                                    <option value="price_desc" {% if selected_sort == 'price_desc' %}selected{% endif %}>價格：高 → 低</option>
+                                    <option value="latest" {% if selected_sort == 'latest' %}selected{% endif %}>最新上架</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="row" id="product-list-container">
+                        
+                            {% include "partials/search_list_items.html" %}
+                        
+                    </div>
+
+                {% else %}
+                    <div class="text-secondary">很抱歉，沒有符合的篩選結果，請嘗試調整篩選條件，謝謝。</div>
+                {% endif %} 
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block script %}
+
+{% include "partials/cart_script_common.html" with with_quantity=false %}
+<script>
+    $(document).ready(function() {
+
+        // 分頁按鈕 AJAX 載入商品
+        $(document).on('click', '.pagination-ajax', function (e) {
+            e.preventDefault();
+            const url = $(this).attr('href');
+
+            $.ajax({
+                url: url,
+                type: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                success: function (data) {
+                    // 正確地取出 JSON 裡的 HTML
+                    $('#product-list-container').html(data.html);
+
+                    // 更新網址不重新整理頁面
+                    window.history.pushState(null, '', url);
+
+                    // 重新綁定「加入購物車」按鈕事件
+                    bindAddToCartEvents();  
+                    bindFavoriteEvents();
+                },
+                error: function () {
+                    alert("載入商品失敗，請稍後再試！");
+                }
+            });
+        });
+        
+    });
+    
+</script>
+{% endblock script %}
+
+

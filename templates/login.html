@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}
+<title>Cui Liang Shi | 登入會員</title>
+{% endblock title %}
+
+{% block style %}
+input::-ms-reveal,
+input::-ms-clear {
+        display: none;
+      }
+#username {
+    width: 93%;
+    margin-left: 12px
+}
+#btnGrp {
+    width: 90%;
+    margin-left: 1px
+}
+{% endblock style %}
+
+{% block head_script %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+{% endblock head_script %}
+
+{% block content %}
+<div class="wrapper container-sm mt-5">
+    <div class="row justify-content-center mt-4" style="min-height: 32rem;">
+        <div class="box col-xxl-6 col-xl-7 col-lg-8 px-4 py-3">    
+            <div class="row">
+                <div style="display: flex; align-items: center;" class="ms-2 my-3">
+                <div class="bar"></div>
+                <h4 class="pt-1">登入會員</h4>
+                </div>
+                <hr style="border-top: 1px solid #999; width: 98%;" class="mx-auto">
+                <div class="row justify-content-center">
+                    <div class="col-10 col-md-8 offset-1">
+                        <form action="/login/" method="post" class="container my-3">
+                            {% csrf_token %}
+                            <div class="row d-flex me-4 my-2">
+                                <label class="form-label ms-1" for="username">帳號</label>
+                                <input class="form-control" type="text" id="username" name="username" required>
+                            </div>
+                            <div class="row d-flex me-4 my-2">
+                                <label class="form-label ms-1" for="password">密碼</label>
+                                <div class="input-group">
+                                    <input class="form-control border-end-0" type="password" id="password" name="password" required>
+                                    <span class="input-group-text bg-white border-start-0" id="togglePassword" style="cursor: pointer;">
+                                        <i class="fa-regular fa-eye"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="row align-items-center">
+                                {% comment %} 顯示檢查結果 {% endcomment %}
+                                {% if message %}
+                                <div class="col mx-2 my-2 text-danger">{{ message }}</div>
+                                {% else %}
+                                <div class="col mx-2 my-2 text-danger">&nbsp;</div>
+                                {% endif %}
+                                <div class="col-auto me-5 my-2 "><a href="/newpassword/" class="text-primary">忘記密碼?</a></div>
+                            </div>
+                            <div class="row justify-content-center mb-2" id="btnGrp" >
+                                <button type="submit" class="btn btn-primary my-1">登入</button>
+                                <a href="/register/" class="btn btn-outline-dark my-2">註冊會員</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 系統提示 Modal -->
+<div class="modal fade" id="systemMessageModal" tabindex="-1" aria-labelledby="systemMessageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header {% if modal_type == 'error' %}bg-danger text-white{% else %}bg-success text-white{% endif %}">
+                <h5 class="modal-title d-flex align-items-center" id="systemMessageModalLabel">
+                    <i class="bi bi-info-circle me-2 fs-4"></i>
+                    系統提示
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="關閉"></button>
+            </div>
+            <div class="modal-body">
+                {{ modal_message }}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn {% if modal_type == 'error' %}btn-light{% else %}btn-outline-success{% endif %}" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block body_script %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const toggle = document.getElementById("togglePassword");
+        const password = document.getElementById("password");
+    
+        toggle.addEventListener("click", function () {
+            const type = password.getAttribute("type") === "password" ? "text" : "password";
+            password.setAttribute("type", type);
+            this.innerHTML = type === "password"
+                ? '<i class="fa-regular fa-eye"></i>'
+                : '<i class="fa-regular fa-eye-slash"></i>';
+        });
+    });
+</script>
+{% if modal_message %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const modal = new bootstrap.Modal(document.getElementById('systemMessageModal'));
+        modal.show();
+    });
+</script>
+{% endif %}
+{% endblock body_script %}

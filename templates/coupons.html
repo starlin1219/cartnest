@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}
+<title>Cui Liang Shi | 會員中心</title>
+{% endblock title %}
+
+{% block style %}
+.nav-link {
+    color: inherit; /* 繼承父元素的顏色，這樣就不會顯示為藍色 */
+    text-decoration: none; /* 移除下劃線 */
+}
+
+.coupon-card {
+  display: flex;
+  align-items: center;
+  background: rgb(248,240,197);
+  border: 2px solid rgb(248,240,197);
+  border-radius: 8px;
+  padding: 15px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.coupon-card:hover {
+  background: rgb(165,188,201);
+  color: rgb(252,252,240);
+}
+.coupon-image img {
+  width: 80px;
+  height: 80px;
+  border-radius: 5px;
+}
+.coupon-info {
+  margin-left: 15px;
+}
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+}
+.modal-content {
+  background: rgb(165, 188, 201);
+  margin: 15% auto;
+  padding: 20px;
+  width: 380px;
+  border-radius: 8px;
+  text-align: center;
+  text-wrap: nowrap;
+}
+.close {
+  float: right;
+  font-size: 28px;
+  cursor: pointer;
+}
+{% endblock style %}
+
+{% block header %}
+{% endblock header %}
+
+{% block content %}
+<div class="wrapper container mt-5">
+  <ul class="nav nav-tabs">
+      <li class="nav-item">
+          <a class="nav-link" href="/users/{{ user_id }}">個人資料</a>
+      </li>
+      <li class="nav-item">
+          <a class="nav-link active" href="/coupons/">優惠券</a>
+      </li>
+      <li class="nav-item">
+          <a class="nav-link" href="/orders/">訂單查詢</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="/favorites/">追蹤清單</a>
+      </li>
+  </ul>
+  <div class="row justify-content-center" style="min-height: 32rem;">
+    <div class="box col-xxl-8 col-xl-9 col-lg-10 px-4 py-3">    
+      <div class="row">
+        <div style="display: flex; align-items: center;" class="ms-2 my-3">
+            <div class="bar"></div>
+            <h4 class="pt-1">優惠券列表</h4>
+        </div>
+        <hr style="border-top: 1px solid #999; width: 98%;" class="mx-auto">
+        <div class="col">
+          <ul class="nav nav-pills mb-2">
+            <li class="nav-item">
+                <a class="nav-link {% if tab == 'active' %}active{% endif %}" href="/coupons/?tab=active">可使用</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if tab == 'used' %}active{% endif %}" href="/coupons/?tab=used">已使用</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if tab == 'expired' %}active{% endif %}" href="/coupons/?tab=expired">已失效</a>
+            </li>
+          </ul>
+          <div class="mt-3 ms-3">
+            {% if user_promotions %}
+                {% for user_promo in user_promotions %}
+                    {% if user_promo.promo.promo_code == "WELCOME100" %}
+                        <div class="row">
+                          <div class="col-md-8 col-lg-7">
+                            <div class="coupon-card" onclick="showCouponDetails()">
+                                <div class="coupon-image">
+                                    <img src="/static/images/{{ coupon_image.image_name }}" alt="優惠券">
+                                </div>
+                                
+                                <div class="coupon-info mt-2">
+                                    <h6 class="coupon-code fw-bold">{{ user_promo.promo.promo_code }}</h6>
+                                    {{ user_promo.promo.discount_value|floatformat:0 }} 元購物金</br>
+                                    <small class="lh-lg">此優惠券有效日期至 {{ user_promo.valid_until }}</small>
+                                </div>
+                                {% if tab == 'used' %}
+                                <span class="badge bg-secondary ms-auto align-self-start">已使用</span>
+                                {% elif tab == 'expired' %}
+                                <span class="badge bg-secondary ms-auto align-self-start">已失效</span>
+                                {% endif %}
+                            </div>
+                          </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <h6>沒有優惠券</h6>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 優惠券詳情彈出視窗 -->
+{% for user_promo in user_promotions %}
+  {% if user_promo.promo.promo_code == "WELCOME100" %}
+  <div id="couponModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeCouponDetails()">&times;</span>
+          <h4 class="mt-3">新會員優惠券</h4>
+          <img class="m-2" src="/static/images/coupon_welcome.png" alt="優惠券">
+          <p>優惠碼：<strong>{{ user_promo.promo.promo_code }}</strong></p>
+          <p class="text-start">使用說明：{{ user_promo.promo.conditions }}</p>
+          <p class="text-start">使用限制：每位會員限用 {{ user_promo.promo.per_user_limit }} 次</p>
+          <p class="text-start">最低消費：單筆訂單需達 {{ user_promo.promo.minimum_spending }} 元 (不含運費)</p>
+          <p class="text-start">有效期間：<span class="text-danger">{{ user_promo.valid_from|date:'Y-m-d'|default_if_none:'' }} 
+            至 {{ user_promo.valid_until|date:'Y-m-d'|default_if_none:'' }}</span></p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+{% endfor %}
+
+{% endblock content %}
+{% block body_script %}
+<script>
+  function showCouponDetails() {
+      document.getElementById("couponModal").style.display = "block";
+  }
+  function closeCouponDetails() {
+      document.getElementById("couponModal").style.display = "none";
+  }
+</script>
+{% endblock body_script %}

@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}
+<title>Cui Liang Shi | 會員中心</title>
+{% endblock title %}
+
+{% block style %}
+.nav-link {
+    color: inherit; /* 繼承父元素的顏色，這樣就不會顯示為藍色 */
+    text-decoration: none; /* 移除下劃線 */
+}
+
+.table td {
+  padding: 2rem 1rem 2rem 1rem;
+}
+#td-xs {
+  padding: 1rem 0.5rem 1rem 0.5rem;
+}
+.table th {
+  padding: 0 0 1rem 1rem;
+}
+/* 控制整體對齊效果 */
+.table td, .table th {
+  vertical-align: middle;
+}
+{% endblock style %}
+
+{% block header %}
+{% endblock header %}
+
+{% block content %}
+<div class="wrapper container mt-5">
+  <ul class="nav nav-tabs">
+    <li class="nav-item">
+      <a class="nav-link" href="/users/{{user_id}}">個人資料</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/coupons/">優惠券</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link active" href="/orders/">訂單查詢</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/favorites/">追蹤清單</a>
+    </li>
+  </ul>
+  <div class="row justify-content-center" style="min-height: 32rem;">
+    <div class="box col-xxl-8 col-xl-9 col-lg-10 px-4 py-3">    
+      <div class="row">
+        <div style="display: flex; align-items: center;" class="ms-2 my-3">
+            <div class="bar"></div>
+            <h4 class="pt-1">訂單列表</h4>
+        </div>
+        <hr style="border-top: 1px solid #999; width: 98%;" class="mx-auto">
+        <div class="col d-none d-sm-block">
+        {% if user_orders %}
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>訂單號碼</th>
+                <th>訂單日期</th>
+                <th>合計</th>
+                <th>訂單狀態</th>
+                <th></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in user_orders %}
+              <tr>
+                <td>{{item.order_number}}</td>
+                <td>{{item.created_at|date:"Y-m-d"}}</td>
+                <td>${{item.final_price}}</td>
+                <td>{{item.order_status}}</td>
+                <td><a href="/orders/{{item.order_number}}/" class="btn btn-warning">查閱</a></td>
+                <td>
+                  {% if item.cancelable %}
+                    <form method="POST" action="/orders/{{ item.order_number }}/cancel/" class="d-inline cancel-order-form">
+                      {% csrf_token %}
+                      <button type="button" class="btn btn-link btn-sm text-danger cancel-btn" 
+                              data-order-number="{{ item.order_number }}"
+                              data-bs-toggle="modal"
+                              data-bs-target="#cancelConfirmModal">
+                          取消訂單
+                      </button>
+                    </form>
+                  {% else %}
+                    <span class="text-muted" style="font-size: 0.9rem;">&nbsp;</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}  
+            </tbody> 
+          </table>
+        {% else %}
+          <h6 class="mt-2">近期沒有可供查看的訂單</h6>
+        {% endif %}
+        </div>
+
+        <div class="col d-sm-none">
+          {% if user_orders %}
+            <table class="table table-hover align-middle table-borderless">
+              <tbody>
+                {% for item in user_orders %}
+                <tr>
+                  <td class="fw-bold" id="td-xs">訂單號碼</th>
+                  <td id="td-xs">{{item.order_number}}</td>
+                </tr>
+                <tr>
+                  <td class="fw-bold" id="td-xs">訂單日期</th>
+                  <td id="td-xs">{{item.created_at|date:"Y-m-d"}}</td>
+                </tr>
+                <tr>
+                  <td class="fw-bold" id="td-xs">合計</th>
+                  <td id="td-xs">${{item.final_price}}</td>
+                </tr>
+                <tr>
+                  <td class="fw-bold" id="td-xs">訂單狀態</th>
+                  <td id="td-xs">{{item.order_status}}</td>
+                </tr>
+                <tr>
+                  <td colspan="2" class="text-end" id="td-xs">
+                    {% if item.cancelable %}
+                      <form method="POST" action="/orders/{{ item.order_number }}/cancel/" class="d-inline cancel-order-form">
+                        {% csrf_token %}
+                        <button type="button" class="btn btn-link btn-sm text-danger cancel-btn" 
+                                data-order-number="{{ item.order_number }}"
+                                data-bs-toggle="modal"
+                                data-bs-target="#cancelConfirmModal">
+                            取消訂單
+                        </button>
+                      </form>
+                    {% else %}
+                      <span class="text-muted">&nbsp;</span>
+                    {% endif %}
+                      <a href="/orders/{{item.order_number}}/" class="btn btn-warning">查閱</a>
+                    </td>
+                </tr>
+                <tr>
+                  <td colspan="2" id="td-xs"><hr></td>
+                </tr>
+                {% endfor %}  
+              </tbody> 
+            </table>
+          {% else %}
+            <h6 class="mt-2">近期沒有可供查看的訂單</h6>
+          {% endif %}
+          </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+<!-- 取消訂單確認 Modal -->
+<div class="modal fade" id="cancelConfirmModal" tabindex="-1" aria-labelledby="cancelConfirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+          <div class="modal-header bg-warning text-dark">
+              <h5 class="modal-title" id="cancelConfirmModalLabel">
+                  <i class="bi bi-exclamation-triangle me-2 fs-4"></i>
+                  確認取消訂單
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
+          </div>
+          <div class="modal-body">
+              確定要取消這筆訂單嗎？此操作無法復原。
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">返回</button>
+              <button type="button" class="btn btn-danger" id="confirmCancelBtn">確認取消</button>
+          </div>
+      </div>
+  </div>
+</div>
+<!-- 系統提示 Modal -->
+<div class="modal fade" id="systemMessageModal" tabindex="-1" aria-labelledby="systemMessageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+          <div class="modal-header {% if modal_type == 'error' %}bg-danger text-white{% else %}bg-success text-white{% endif %}">
+            <h5 class="modal-title d-flex align-items-center" id="systemMessageModalLabel">
+                <i class="bi bi-info-circle me-2 fs-4"></i>
+                系統提示
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="關閉"></button>
+          </div>
+          <div class="modal-body">
+            {{ modal_message }}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn {% if modal_type == 'error' %}btn-light{% else %}btn-outline-success{% endif %}" data-bs-dismiss="modal">關閉</button>
+          </div>
+      </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block body_script %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+      let targetForm = null;
+  
+      // 綁定每個「取消訂單」按鈕
+      const cancelButtons = document.querySelectorAll(".cancel-btn");
+      cancelButtons.forEach(button => {
+          button.addEventListener("click", function () {
+              targetForm = this.closest("form");
+          });
+      });
+  
+      // 綁定 Modal 中的「確認取消」按鈕
+      const confirmCancelBtn = document.getElementById("confirmCancelBtn");
+      if (confirmCancelBtn) {
+          confirmCancelBtn.addEventListener("click", function () {
+              if (targetForm) {
+                  targetForm.submit();
+                  targetForm = null; // 避免重複觸發
+              }
+          });
+      }
+  });
+</script>
+{% if modal_message %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const modal = new bootstrap.Modal(document.getElementById('systemMessageModal'));
+        modal.show();
+    });
+</script>
+{% endif %}
+{% endblock body_script %}

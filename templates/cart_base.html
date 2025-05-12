@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock title %}</title>
+    <link rel="stylesheet" href="{% static '/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        .theme {
+            background-color: #9FB9CC;
+            padding: 1rem 2rem 1rem 2rem;
+        }
+
+        footer {
+            background-color: #9FB9CC;
+        }
+
+        .brand_title {
+            text-shadow: 0rem 0.2rem 0.5rem #1E293A; 
+            color: #F9FCFF;
+        }
+
+        body {
+            background-color: #FCFCEE;
+            font-weight: bold;
+            max-width: 99.3%;
+        }
+        .box {
+            background-color: white;
+            padding: 1rem;
+            
+        }
+        a {
+            color: inherit; /* 保持原本顏色 */
+            text-decoration: none; /* 移除底線 */
+        }
+
+        a:hover {
+            color: inherit; /* 懸停時不改變顏色 */
+        } 
+
+        .go_home {
+            color:  #FCFCEE;
+        }
+        .go_home:hover {
+            color: #1E293A;
+        }
+        
+        @media (min-width: 992px) {
+            .box {
+                border-radius: 1rem;
+                margin: 3rem 1rem 3rem 1rem;
+                box-shadow: 0rem 0.2rem 0.5rem #999CA3; 
+                
+            }
+            .brand_title {
+                margin-left: 15%;
+            }
+        }
+
+        @media (max-width: 992px) {
+            body {
+                background-color: white;
+            }
+        }
+
+        .step-container {
+            display: flex;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            }
+    
+        .step {
+            display: flex;
+            align-items: center;
+            color: #aaa;
+        }
+
+        .step .circle {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: 2px solid #ccc;
+            margin-right: 6px;
+        }
+
+        .step.active .circle {
+            background-color: #007bff;
+            color: #fff;
+            border-color: #007bff;
+        }
+
+        .step.active .label {
+            color: #000;
+            font-weight: bold;
+        }
+
+        .label {
+            font-size: 1rem;
+        }
+
+        .divider {
+            flex: 1;
+            max-width: 10rem;
+            min-width: 2rem;
+            height: 1px;
+            background-color: #ccc;
+            margin: 0 10px;
+        }
+
+        .bar {
+            width: 0.5rem;
+            height: 2rem;
+            background-color: #9FB9CC;
+            border-radius: 1rem;
+            margin-right: 0.5rem;
+        }
+
+        #backToTopBtn {
+            display: none; /* 預設隱藏 */
+            position: fixed;
+            bottom: 40px;
+            right: 30px;
+            z-index: 99;
+            font-size: 18px;
+            border: none;
+            outline: none;
+            background-color: #394861;
+            color: white;
+            cursor: pointer;
+            padding: 12px 16px;
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        #backToTopBtn:hover {
+            background-color:rgb(165, 188, 201);
+        }
+    </style>
+    {% block style %}{% endblock style %}
+</head>
+<body>
+    <div class="container-fluid-md">
+        <!-- 標題 -->
+        <div class="row" >
+            <nav class="navbar theme d-flex">
+                <h1 class="pe-2 brand_title">
+                    <a href="{% url 'home' %}" class="me-2">CUI LIANG SHI&nbsp;&nbsp;|</a> 
+                    <span style="font-size: 1.8rem;">購物車</span>
+                </h1>
+                <a href="{% url 'home' %}" class="go_home d-block pe-1" style="font-size: 0.8rem; margin-right: 15%;">回到首頁</a> 
+            </nav> 
+        </div>
+
+        {% block content %}{% endblock content %}
+    </div>
+
+    <!-- 回到頂部按鈕 -->
+    <div class="row">
+        <div class="col-3 col-lg-4 ms-auto">
+            <button onclick="scrollToTop()" id="backToTopBtn" title="回到上面">
+                <i class="bi bi-arrow-up"></i>
+            </button>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary">
+                    <h5 class="modal-title d-flex align-items-center text-light" id="messageModalLabel">
+                        <i class="bi bi-info-circle-fill text-light me-2 fs-4"></i>
+                        提醒
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="關閉"></button>
+                </div>
+                <div class="modal-body">
+                    {% for message in messages %}
+                            {{ message }}
+                    {% endfor %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">我知道了</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Toast 容器 -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+        <div id="couponToast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center" id="toast-body">
+                    <i class="bi bi-check-circle-fill me-2" id="toast-icon"></i>
+                    <span id="toast-message">優惠碼已成功套用！</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    {% block UI %}{% endblock UI %}
+
+    <script src="{% static '/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // 當頁面從快取返回（例如按上一頁）
+            window.addEventListener('pageshow', function(event) {
+                // 如果是從瀏覽器快取載入                
+                if (event.persisted || (window.performance && performance.getEntriesByType("navigation")[0]?.type === "back_forward")) {
+                    location.reload();
+                }            
+            });
+        });
+
+        function showToast(message, isSuccess = true) {
+            const toastElement = document.getElementById('couponToast');
+            const toastBody = document.getElementById('toast-body');
+            const toastIcon = document.getElementById('toast-icon');
+            const toastMessage = document.getElementById('toast-message');
+
+            toastMessage.innerText = message;
+
+            // 切換 icon 與背景色
+            if (isSuccess) {
+                toastElement.classList.remove('text-bg-danger');
+                toastElement.classList.add('text-bg-primary');
+                toastIcon.className = 'bi bi-check-circle-fill me-2';
+            } else {
+                toastElement.classList.remove('text-bg-primary');
+                toastElement.classList.add('text-bg-danger');
+                toastIcon.className = 'bi bi-exclamation-circle-fill me-2';
+            }
+
+            const toast = new bootstrap.Toast(toastElement, { delay: 2000 });
+            toast.show();
+        }
+        
+        // 滾動時判斷是否顯示按鈕
+        window.onscroll = function() {
+            const btn = document.getElementById("backToTopBtn");
+            if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+            btn.style.display = "block";
+            } else {
+            btn.style.display = "none";
+            }
+        };
+
+        // 點擊按鈕回到頂部
+        function scrollToTop() {
+                window.scrollTo({
+                top: 0,
+                behavior: 'smooth' // 平滑滾動
+            });
+        }
+
+        window.onload = function () {
+            const messageModal = document.getElementById('messageModal');
+            if (messageModal) {
+                const modal = new bootstrap.Modal(messageModal);
+                modal.show();
+
+                // 2 秒後自動關閉
+                setTimeout(() => {
+                    modal.hide();
+                }, 2000);
+            }
+        };
+
+    </script>
+    {% block script %}{% endblock script %}
+</body>
+</html>

@@ -1,0 +1,378 @@
+{% extends "cart_base.html" %}
+{% load static %}
+
+{% block title %}CUI LIANG SHI | 購物車{% endblock title %}
+
+{% block style %}
+<style>
+    .table td {
+        padding: 2rem 1rem 2rem 1rem;
+    }
+    .table th {
+        padding: 0 0 1rem 1rem
+    }
+    /* 控制整體對齊效果
+    .table td, .table th {
+        vertical-align: middle;
+    } */
+    
+    label {
+        font-weight: bold;
+    }
+
+    .form-check-input {
+        margin-right: 5px;
+    }
+
+    .custom-select {
+        width: 100%;
+        padding: 0.5rem 1.5rem 0.5rem 0.5rem; /* 右側留空間給箭頭 */
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        background-color: #fff;
+        font-size: 1rem;
+        cursor: pointer;
+        
+        /* 移除預設的箭頭 */
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+
+        /* 自訂箭頭圖示 */
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23333' class='bi bi-chevron-down' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center; /* 控制箭頭與邊框之間的距離 */
+        background-size: 14px;
+    }
+</style>
+{% endblock style %}
+
+
+{% block content %}
+<div class="step-container justify-content-center mt-5">
+    <div class="step active">
+        <span class="circle">1</span>
+        <span class="label">購物車明細</span>
+    </div>
+    <div class="divider"></div>
+    <div class="step active">
+        <span class="circle">2</span>
+        <span class="label">訂單確認、填寫訂購資料</span>
+    </div>
+    <div class="divider"></div>
+    <div class="step">
+        <span class="circle">3</span>
+        <span class="label">購買完成</span>
+    </div>
+</div>
+
+<div class="row justify-content-center" style="min-height: 32rem;">
+    <div class="box col-xxl-8 col-xl-9 col-lg-10 px-4 py-3">    
+        <div class="row">
+            <div style="display: flex; align-items: center;" class="ms-2 my-3">
+                <div class="bar"></div>
+                <h4 class="pt-1">訂單確認</h4>
+            </div>
+            <hr style="border-top: 1px solid #999; width: 98%;" class="mx-auto">
+
+            <div class="col">
+                <table class="table">
+                    <tr>
+                        <th colspan="2">商品</th>
+                        <th>商品數量</th>
+                        <th class="subtotal">小計</th>
+                    </tr>
+                
+                    {% for key, item in selected_items.items %}
+                    <tr>
+                        <td><img src="{% static 'product_images/' %}{{ item.image }}" style="width: 10rem;"></td>
+                        <td>
+                            <p>{{ item.name }} {{ item.size }}{% if item.package != '單入' %}{{ item.package }}{% endif %}</p>
+                            <p>${{ item.price }}</p>
+                        </td>
+                        <td>{{ item.quantity }}</td>
+                        <td class="subtotal">${{ item.subtotal }}</td>
+                    </tr>
+                    {% endfor %}
+                
+                    {% if gifts %}
+                    <tr>
+                        <td colspan="4">
+                            <p>活動贈品:</p>
+                            <ul>
+                                {% for gift in gifts %}
+                                <li class="mt-2">
+                                    {{ gift.promo_name }} {{ gift.conditions }} -
+                                    {{ gift.product_name }}
+                                    {% if gift.size %}- {{ gift.size }}{% endif %}
+                                    {% if gift.package and gift.package != '單入' %}- {{ gift.package }}{% endif %}
+                                    x {{ gift.quantity }}
+                                    {% if gift.source == 'auto' %}
+                                        <span class="badge bg-success ms-2">活動</span>
+                                    {% elif gift.source == 'coupon' %}
+                                        <span class="badge bg-primary ms-2">優惠碼</span>
+                                    {% endif %}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                    {% endif %}
+                
+                    <tr>
+                        <td colspan="4">
+                            <p>商品總金額: <span class="total-amount">${{ total }}</span></p>
+                            <p>運費: ${{ shipping_cost }}</p>
+                
+                            {% if coupon_code %}
+                            <p>優惠碼: {{ coupon_code }}</p>
+                            {% endif %}
+                
+                            <p>折扣: ${{ discount }}</p>
+                
+                            <div class="accordion" id="discountAccordion">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="headingDiscount">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDiscount" aria-expanded="false" aria-controls="collapseDiscount">
+                                            查看優惠項目
+                                        </button>
+                                    </h2>
+                                    <div id="collapseDiscount" class="accordion-collapse collapse" aria-labelledby="headingDiscount" data-bs-parent="#discountAccordion">
+                                        <div class="accordion-body">
+                                            {% if active_promotions %}
+                                                <ul>
+                                                    {% for promo in active_promotions %}
+                                                        <li>{{ promo.promo_name }} {{ promo.conditions }} - 折扣 ${{ promo.discount }}</li>
+                                                    {% endfor %}
+                                                </ul>
+                                            {% else %}
+                                                <p>尚未套用優惠</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td colspan="4">
+                            <h5>結帳金額: <span class="final-amount">${{ final_total }}</span></h5>
+                        </td>
+                    </tr>
+                </table>                        
+                
+            </div>
+        </div>   
+    </div>
+</div>
+
+<div class="row justify-content-center" style="min-height: 32rem;">
+    <div class="box col-xxl-8 col-xl-9 col-lg-10 px-4 py-3">    
+        <div class="row">
+            <div style="display: flex; align-items: center;" class="ms-2 my-3">
+                <div class="bar"></div>
+                <h4 class="pt-1">填寫訂購資料</h4>
+            </div>
+            <hr style="border-top: 1px solid #999; width: 98%;" class="mx-auto">
+
+            <form action="{% url 'order_completed' %}" method="post">
+                {% csrf_token %}
+                <!-- 訂購人姓名 -->
+                <div class="row mt-3">
+                    <div class="col-md-2 ">
+                        <label class="form-label" for="{{ form.name.id_for_label }}">{{ form.name.label }} : </label>
+                    </div>
+                    <div class="col-md-10 ">
+                        {{ form.name }}
+                    </div>
+                </div>
+
+                <!-- 電話 -->
+                <div class="row mt-4">
+                    <div class="col-md-2 ">
+                        <label class="form-label" for="{{ form.phone.id_for_label }}">{{ form.phone.label }} : </label>
+                    </div>
+                    <div class="col-md-10 ">
+                        {{ form.phone }}
+                    </div>
+                </div>
+
+                <!-- Email -->
+                <div class="row mt-4">
+                    <div class="col-md-2">
+                        <label class="form-label" for="{{ form.email.id_for_label }}">{{ form.email.label }} :</label>
+                    </div>
+                    <div class="col-md-10">
+                        {{ form.email }}
+                    </div>
+                </div>
+
+                <!-- 寄送方式 -->
+                <div class="row mt-4">
+                    <div class="col-md-2">
+                        <label class="form-label" for="{{ form.ship_by.id_for_label }}">{{ form.ship_by.label }} :</label>
+                    </div>
+                    <div class="col-md-10">
+                        {% for radio in form.ship_by %}
+                        <div class="form-check form-check-inline">
+                            {{ radio.tag }}
+                            <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                {{ radio.choice_label }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- 縣市和區域 -->
+                <div class="row mt-4">
+                    <div class="col-md-2">
+                        <label class="form-label" for="{{ form.city.id_for_label }}">寄送地址 :</label>
+                    </div>
+                    <div class="col-md-5">
+                        <select name="city" id="city" class="custom-select" required onchange="updateDistricts()">
+                            {% for value, label in form.city.field.choices %}
+                                <option value="{{ value }}" {% if form.city.value == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-5 mt-3 mt-md-0">
+                        <select name="district" id="district" class="custom-select" required>
+                            {% for value, label in form.district.field.choices %}
+                                <option value="{{ value }}" {% if form.district.value == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <!-- 詳細地址 -->
+                <div class="row mt-3">
+                    <div class="col-md-2"></div>
+                    <div class="col-md-10">
+                        {{ form.detail_address }}
+                    </div>
+                </div>
+
+                <!-- 付款方式 -->
+                <div class="row mt-4">
+                    <div class="col-md-2">
+                        <label class="form-label" for="{{ form.payment.id_for_label }}">{{ form.payment.label }} :</label>
+                    </div>
+                    <div class="col-md-10">
+                        {% for radio in form.payment %}
+                            <div class="form-check form-check-inline">
+                                {{ radio.tag }}
+                                <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                    {{ radio.choice_label }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- 表單錯誤提示 -->
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <!-- 提交訂單按鈕 -->
+                <div class="row mt-5">
+                    <div class="col">
+                        <button type="submit" id="submit-btn" class="btn btn-primary w-100">
+                            <span class="spinner-border spinner-border-sm d-none me-2" id="submit-spinner" role="status" aria-hidden="true"></span>
+                            提交訂單
+                        </button>
+                    </div>
+                </div>
+                <!-- 回上一頁按鈕 -->
+                <div class="row mt-3 mb-4">
+                    <div class="col">
+                        <button type="button" class="btn btn-secondary w-100" onclick="history.back()">回上一頁</button>
+                    </div>
+                </div>
+            </form>
+        </div>    
+    </div>
+</div>
+{% endblock content %}
+
+
+{% block script %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 當頁面從快取返回（例如按上一頁）
+        window.addEventListener('pageshow', function(event) {
+            // 如果是從瀏覽器快取載入                
+            if (event.persisted || (window.performance && performance.getEntriesByType("navigation")[0]?.type === "back_forward")) {
+                location.reload();
+            }            
+        });
+    });
+
+    const cityDistricts = {
+        "基隆市": ["中正區", "七堵區", "暖暖區", "仁愛區", "中山區", "安樂區", "信義區"],
+        "臺北市": ["中正區", "大同區", "中山區", "萬華區", "信義區", "松山區", "大安區", "南港區", "北投區", "內湖區", "士林區", "文山區"],
+        "新北市": ["萬里區", "金山區", "板橋區", "汐止區", "深坑區", "石碇區", "瑞芳區", "平溪區", "雙溪區", "貢寮區", "新店區", "坪林區", "烏來區", "永和區", "中和區", "土城區", "三峽區", "樹林區", "鶯歌區", "三重區", "新莊區", "泰山區", "林口區", "蘆洲區", "五股區", "八里區", "淡水區", "三芝區","石門區"],
+        "桃園市": ["蘆竹區", "中壢區", "平鎮區", "龍潭區", "楊梅區", "新屋區", "觀音區", "桃園區", "龜山區", "八德區", "大溪區", "復興區", "大園區"],
+        "新竹市": ["東區", "北區","香山區"],
+        "新竹縣": ["竹北市", "湖口鄉", "新豐鄉", "新埔鎮", "關西鎮", "芎林鄉", "寶山鄉", "竹東鎮", "五峰鄉", "橫山鄉", "尖石鄉", "北埔鄉", "峨眉鄉"],
+        "苗栗縣": ["竹南鎮", "頭份市", "三灣鄉", "南庄鄉", "獅潭鄉", "後龍鎮", "通霄鎮", "苑裡鎮", "苗栗市", "造橋鄉", "頭屋鄉", "公館鄉", "大湖鄉", "泰安鄉", "銅鑼鄉", "三義鄉","西湖鄉","卓蘭鎮"],
+        "臺中市": ["中區", "東區", "南區", "西區", "北區", "北屯區", "西屯區", "南屯區", "太平區", "大里區", "霧峰區", "烏日區", "豐原區", "后里區", "石岡區", "東勢區", "和平區", "新社區", "潭子區", "大雅區", "神岡區", "大肚區", "沙鹿區", "龍井區", "梧棲區", "大甲區", "外埔區", "大安區"],
+        "彰化縣": ["彰化市", "芬園鄉", "花壇鄉", "秀水鄉", "鹿港鎮", "福興鄉", "線西鄉", "和美鎮", "伸港鄉", "員林市", "社頭鄉", "永靖鄉", "埔心鄉", "溪湖鎮", "大村鄉", "埔鹽鄉", "田中鎮", "北斗鎮", "田尾鄉", "埤頭鄉","溪州鄉", "竹塘鄉", "二林鎮", "大城鄉", "芳苑鄉","二水鄉"],
+        "南投縣": ["南投市", "中寮鄉", "草屯鎮", "國姓鄉", "埔里鎮", "仁愛鄉", "名間鄉", "集集鎮", "水里鄉", "魚池鄉", "信義鄉", "竹山鎮", "鹿谷鄉"],
+        "雲林縣": ["斗南市", "大埤鄉", "虎尾鎮", "土庫鎮", "褒忠鄉", "東勢鄉", "臺西鄉", "崙背鄉", "麥寮鄉", "斗六市", "林內鄉", "古坑鄉", "莿桐鄉", "西螺鎮", "二崙鄉", "北港鎮", "水林鄉", "口湖鄉", "四湖鄉", "元長鄉"],
+        "嘉義市": ["東區", "西區"],
+        "嘉義縣": ["番路鄉", "梅山鄉", "竹崎鄉", "阿里山鄉", "中埔鄉", "大埔鄉", "水上鄉", "鹿草鄉", "太保市", "朴子市", "東石鄉", "六腳鄉", "新港鄉", "民雄鄉", "大林鎮", "溪口鄉", "義竹鄉", "布袋鎮"],
+        "臺南市": ["中西區", "東區", "南區", "北區", "安平區", "安南區", "永康區", "歸仁區", "新化區", "左鎮區", "玉井區", "楠西區", "南化區", "仁德區", "關廟區", "龍崎區", "官田區", "麻豆區", "佳里區", "西港區", "七股區", "將軍區", "學甲區", "北門區", "新營區", "後壁區", "白河區", "東山區", "六甲區", "下營區", "柳營區", "鹽水區", "善化區", "大內區", "山上區", "新市區", "安定區"],
+        "高雄市": ["新興區", "前金區", "芩雅區", "鹽埕區", "鼓山區", "旗津區", "前鎮區", "三民區", "楠梓區", "小港區", "左營區", "仁武區", "大社區", "東沙群島", "南沙群島", "岡山區", "路竹區", "阿蓮區", "田寮區", "燕巢區", "橋頭區", "梓官區", "彌陀區", "永安區", "湖內區", "鳳山區", "大寮區", "林園區", "鳥松區", "大樹區", "旗山區", "美濃區", "六龜區", "內門區", "杉林區", "甲仙區", "桃源區", "那瑪夏區", "茂林區","茄萣區"],
+        "屏東縣": ["屏東市", "三地門鄉", "霧臺鄉", "瑪家鄉", "九如鄉", "麟洛鄉", "九如鄉", "里港鄉", "高樹鄉", "高樹鄉", "鹽埔鄉", "長治鄉", "麟洛鄉", "竹田鄉", "內埔鄉", "萬丹鄉", "潮州鎮", "泰武鄉", "來義鄉", "萬巒鄉", "崁頂鄉", "新埤鄉", "南州鄉", "林邊鄉", "東港鎮", "琉球鄉", "佳冬鄉", "新園鄉", "枋寮鄉", "枋山鄉", "春日鄉", "獅子鄉", "車城鄉", "牡丹鄉", "恆春鎮", "滿州鄉"],
+        "宜蘭縣": ["宜蘭市", "頭城鎮", "礁溪鄉", "壯圍鄉", "員山鄉", "羅東鎮", "三星鄉", "大同鄉", "五結鄉", "冬山鄉", "蘇澳鎮", "南澳鄉","釣魚臺"],
+        "花蓮縣": ["花蓮市", "新城鄉", "秀林鄉", "吉安鄉", "壽豐鄉", "鳳林鎮", "光復鄉", "豐濱鄉", "瑞穗鄉", "萬榮鄉", "玉里鎮", "卓溪鄉", "富里鄉"],
+        "臺東縣": ["臺東市", "綠島鄉", "蘭嶼鄉", "延平鄉", "卑南鄉", "鹿野鄉", "關山鎮", "海端鄉", "池上鄉", "東河鄉", "成功鎮", "長濱鄉", "太麻里鄉", "金峰鄉", "大武鄉", "達仁鄉"],
+        "澎湖縣": ["馬公市", "湖西鄉", "白沙鄉", "西嶼鄉", "望安鄉", "七美鄉"],
+        "金門縣": ["金沙鎮", "金湖鎮", "金寧鄉", "金城鎮", "烈嶼鄉", "烏坵鄉"],
+        "連江縣": ["南竿鄉", "北竿鄉", "東引鄉","莒光鄉"],
+    };
+
+    // 初始化城市選項
+    const citySelect = document.getElementById('city');
+    for (let city in cityDistricts) {
+        citySelect.innerHTML += `<option value="${city}">${city}</option>`;
+    }
+
+    function updateDistricts() {
+        const districtSelect = document.getElementById('district');
+        districtSelect.innerHTML = '<option value="">選擇區域</option>';
+        const selectedCity = citySelect.value;
+        cityDistricts[selectedCity]?.forEach(district => {
+            districtSelect.innerHTML += `<option value="${district}">${district}</option>`;
+        });
+    }
+
+    document.querySelector("form").addEventListener("submit", function () {
+        event.preventDefault();  // 防止預設行為（瀏覽器自動送出）
+
+        const btn = document.getElementById("submit-btn");
+        const spinner = document.getElementById("submit-spinner");
+
+        btn.disabled = true;
+        spinner.classList.remove("d-none");  // 顯示 spinner
+        btn.innerHTML = '';  // 清空內容
+        btn.appendChild(spinner);  // 加 spinner
+        btn.append(" 訂單提交中...");
+
+            // 延遲 100ms 再送出表單，讓 spinner 有時間渲染
+        setTimeout(() => {
+            this.submit(); // 實際送出表單
+        }, 100);
+    });
+</script>
+{% endblock script %}

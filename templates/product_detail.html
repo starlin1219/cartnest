@@ -1,0 +1,237 @@
+{% extends "product_base.html" %}
+{% load static %}
+
+{% block title %}CUI LIANG SHI | 商品詳情{% endblock title %}
+
+<style>
+    .desc{
+        white-space: pre-wrap 
+    }
+    p {
+        font-size: 1.2rem;
+    }
+    
+    /* 讓下拉選單展開方向朝下 */
+    .dropdown {
+        overflow: visible; /* 確認展開空間 */
+        direction: ltr; /* 設定方向為從左到右 */
+    }
+
+</style>
+    
+
+{% block content %}
+
+<div class="container">
+    <div class="row justify-content-center" style="min-height: 32rem;">
+
+        <div class="col-11 mt-4">
+            <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}"><i class="bi bi-house"></i></a></li>
+
+                    {% if context.category_name and context.category_ids.0 %}
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'product_list' %}?category={{ context.category_ids.0 }}">
+                            {{ context.category_name }}
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if context.product_name %}
+                    <li class="breadcrumb-item active" aria-current="page">
+                        {{ context.product_name }}
+                    </li>
+                    {% endif %}
+
+                </ol>
+            </nav>
+        </div> 
+
+        <div class="box p-5 d-xl-flex">
+            <div class="col-xl-6 me-xl-5 mb-5 mb-xl-1">
+                {% if image %}
+                    <img src="{% static 'product_images/' %}{{ image }}" alt="pic" style="width: 100%;">
+                {% else %}
+                    <img src="{% static 'product_images/no_image.png' %}" alt="no_pic" style="width: 100%;">
+                {% endif %}
+            </div>
+
+            <div class="col-xl-6 d-flex flex-column">
+                <div>
+                    <h2>{{ context.product_name }}&nbsp;{{ context.size }}&nbsp;
+                        {% if context.package != "單入" %}
+                            &nbsp;{{context.package}}
+                        {% endif %}
+                    </h2>
+                    <br>
+                    
+                    <h4 class="desc">{{ context.description | linebreaksbr}}</h4>
+                    <br>
+                    <h4>${{ context.price }}</h4>
+                </div>
+
+                <!-- 數量選擇 -->
+                <div class="my-4">
+                    <select id="quantity" class="form-select dropdown" style="width: 120px;">
+                        {% for i in quantity_range %}
+                            <option value="{{ i }}">{{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="d-flex justify-content-end mt-auto me-xl-5">
+
+                    {% if login_status %}
+                        <i class="bi {% if variant_id in favorite_variants %}bi-heart-fill{% else %}bi-heart{% endif %}
+                            text-danger favorite-icon me-3" 
+                            style="font-size: 2rem; cursor: pointer;"
+                            data-variant-id="{{ variant_id }}">
+                        </i>
+                    {% else %}
+                        <i class="bi bi-heart text-secondary me-3"
+                            style="font-size: 2rem; cursor: not-allowed;"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            data-bs-title="請先登入才能追蹤該商品">
+                        </i>
+                    {% endif %}
+
+
+                    <!-- 加入購物車 -->
+                    <span class="col-6 col-md-5 me-3">
+                        <button class="btn btn-primary w-100 add-to-cart" 
+                            data-variant-id="{{ variant_id }}"
+                            data-product-id="{{ context.product_id }}"
+                            data-category-ids="{{ context.category_ids|join:',' }}"
+                            data-name="{{ context.product_name }}"
+                            data-size="{{ context.size }}"
+                            data-package="{{ context.package }}"
+                            data-price="{{ context.price }}"
+                            data-image="{{ image }}"
+                            {% if context.stock_total == 0 %}disabled{% endif %}>
+                            {% if context.stock_total == 0 %}缺貨中...{% else %}加入購物車{% endif %}
+                        </button>
+                    </span>
+                    
+
+                    <!-- 立即購買 -->
+                    <span class="col-6 col-md-5">
+                        <button class="btn btn-outline-primary w-100 buy-now" 
+                            data-variant-id="{{ variant_id }}"
+                            data-product-id="{{ context.product_id }}"
+                            data-category-ids="{{ context.category_ids|join:',' }}"
+                            data-name="{{ context.product_name }}"
+                            data-size="{{ context.size }}"
+                            data-package="{{ context.package }}"
+                            data-price="{{ context.price }}"
+                            data-image="{{ image }}"
+                            {% if context.stock_total == 0 %}disabled{% endif %}>
+                            立即購買
+                        </button>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div> 
+</div>   
+
+<div class="container">
+    <div class="row justify-content-center" style="min-height: 32rem;">
+        <div class="box col p-5">
+            <div style="display: flex; align-items: center;">
+                <div class="bar"></div>
+                <h3>商品特色</h3>
+            </div>
+            <hr style="border-top: 1px solid #999; width: 98%;" class="mx-auto mb-5">
+
+            {% if context.long_description %}
+            <p class="desc">{{ context.long_description | linebreaksbr }}</p>
+            {% endif %}
+        </div>
+    </div> 
+</div>
+
+<div class="container">
+    <div class="row justify-content-center" style="min-height: 32rem;">
+        <div class="box col p-5">
+            <div style="display: flex; align-items: center;">
+                    <div class="bar"></div>
+                    <h3>商品規格及詳情</h3>
+            </div>
+            <hr style="border-top: 1px solid #999; width: 98%;" class="mx-auto mb-5">
+
+            {% if context.size %}<p>容量/重量: {{ context.size }}</p>{% endif %}
+            {% if context.package %}<p>包裝數: {{ context.package }}</p>{% endif %}
+
+            {% if effectiveness %}
+            <p>功效:
+                {% for effective in effectiveness %}
+                    {{ effective }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+            {% endif %}
+
+            {% if ingredients %}
+            <p>主要成分:
+                {% for ingredient in ingredients %}
+                    {{ ingredient }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+            {% endif %}
+            
+            {% if context.fragrance %}<p>香氣: {{ context.fragrance }}</p>{% endif %}
+            {% if context.origin %}<p>產地: {{ context.origin }}</p>{% endif %}
+            {% if context.shelf_life %}<p>保存期限: {{ context.shelf_life }}</p>{% endif %}
+            {% if context.suitable_for %}<p>適用於: {{ context.suitable_for }}</p>{% endif %}
+            {% if context.usage_instructions %}<p>使用方法: {{ context.usage_instructions }}</p>{% endif %}
+            {% if context.supplier_name %}<p>廠商: {{ context.supplier_name }}</p>{% endif %}
+            {% if context.supplier_phone %}<p>廠商電話: {{ context.supplier_phone }}</p>{% endif %}
+            {% if context.supplier_address %}<p>廠商地址: {{ context.supplier_address }}</p>{% endif %}
+
+        </div>
+    </div> 
+</div>
+
+{% endblock content %}
+
+
+{% block script %}
+
+{% include 'partials/cart_script_common.html' with with_quantity=true %}
+
+<script>
+
+    // 強制重新綁定（確認是 with_quantity）
+    $(function () {
+        bindAddToCartEvents(true);  // 加入購物車數量正式綁定
+    });
+    
+    document.addEventListener('DOMContentLoaded', function () {
+        const viewed = {
+            variant_id: "{{ variant_id }}",
+            name: "{{ context.product_name }}",
+            size: "{{ context.size }}",
+            package: "{{ context.package }}",
+            price: {{ context.price }},
+            image: "{% static 'product_images/' %}{{ image }}"
+        };
+    
+        let recent = JSON.parse(localStorage.getItem("recentlyViewed") || "[]");
+    
+        // 移除重複
+        recent = recent.filter(item => item.variant_id !== viewed.variant_id);
+    
+        // 新增到最前面
+        recent.unshift(viewed);
+    
+        // 限制最多 10 筆
+        if (recent.length > 20) {
+            recent = recent.slice(0, 20);
+        }
+    
+        localStorage.setItem("recentlyViewed", JSON.stringify(recent));
+    });
+    
+</script>
+{% endblock script %}
